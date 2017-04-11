@@ -2,7 +2,7 @@
 
 Camera::Camera() {
     loc = glm::vec3(0, 0, 0);
-    up = glm::vec3(0, 0 , 0);
+    up = glm::vec3(0, 0, 0);
     right = glm::vec3(0, 0, 0);
     lookAt = glm::vec3(0, 0, 0);
 
@@ -14,4 +14,20 @@ Camera::Camera(glm::vec3 lo, glm::vec3 u, glm::vec3 r, glm::vec3 la) {
     right = glm::vec3(r.x, r.y, r.z);
     lookAt = glm::vec3(la.x, la.y, la.z);
 
+}
+
+void Camera::set_loc(glm::vec3 v) {
+    loc = glm::vec3(v.x, v.y, v.z);
+}
+
+void Camera::set_up(glm::vec3 v) {
+    up = glm::vec3(v.x, v.y, v.z);
+}
+
+void Camera::set_right(glm::vec3 v) {
+    right = glm::vec3(v.x, v.y, v.z);
+}
+
+void Camera::set_lookAt(glm::vec3 v) {
+    lookAt = glm::vec3(v.x, v.y, v.z);
 }
