@@ -1,6 +1,8 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <vector>
 
+enum tranformType {scale_t, translate_t, rotate_t};
+
 class GeomObj{
 public:
     GeomObj();
@@ -15,6 +17,10 @@ public:
     void set_transform(std::vector<glm::vec4> t) {transform = t;}
     void set_ambient(double a) {ambient = a;}
     void set_diffuse(double d) {diffuse = d;}
+
+    void print_transform();
+    void print_color();
+    void print_material();
 
 protected:
     glm::vec3 rgb;
@@ -37,6 +43,8 @@ public:
     void set_center(glm::vec3 v) {center = v;};
     void set_rad(double r) {rad = r;};
 
+    void print();
+
 private:
     glm::vec3 center;
     double rad;
@@ -52,6 +60,8 @@ public:
 
     void set_normal(glm::vec3 v) {normal = v;}
     void set_distance(double d) {distance = d;}
+
+    void print();
 
 
 private:

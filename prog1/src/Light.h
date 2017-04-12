@@ -1,4 +1,5 @@
 #include <glm/gtc/type_ptr.hpp>
+#include <cstdio>
 
 class Light {
 public:
@@ -8,6 +9,8 @@ public:
     glm::vec3 get_rgb() const {return rgb;}
     void set_loc(glm::vec3 v);
     void set_rgb(glm::vec3 v);
+
+    void print();
 
 private:
     glm::vec3 loc, rgb;

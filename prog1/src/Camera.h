@@ -1,4 +1,5 @@
 #include <glm/gtc/type_ptr.hpp>
+#include <cstdio>
 
 class Camera {
     
@@ -13,6 +14,8 @@ public:
     void set_up(glm::vec3 v);
     void set_right(glm::vec3 v);
     void set_lookAt(glm::vec3 v);
+
+    void print();
 
 private:
     glm::vec3 loc, up, right, lookAt;

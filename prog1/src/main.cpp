@@ -11,12 +11,98 @@
 #include "Light.h"
 #include "GeomObj.h"
 
-enum objType {camera, light, sphere, plane, triangle, box, cone, comment};
-enum tranformType {scale_t, translate_t, rotate_t};
+enum objType {camera_t, light_t, sphere_t, plane_t, triangle_t, box_t, cone_t, comment_t};
 
 using namespace std;
 
 
+void parse_objects(char *filename, vector<string> *cameraVec, 
+                   vector<string> *lightVec, vector<string> *sphereVec, 
+                   vector<string> *planeVec, vector<string> *triangleVec, 
+                   vector<string> *boxVec, vector<string> *coneVec) 
+{
+    fstream f;
+    size_t findStr;
+    objType t;
+    string tempStr = "";
+
+    f.open(filename, fstream::in);
+    for (string line; getline(f, line); ) {
+
+        findStr = line.find("//");
+        if (findStr != string::npos) {
+            t = comment_t;
+        }
+
+        findStr = line.find("camera");
+        if (findStr != string::npos) {
+            t = camera_t;
+        }
+
+        findStr = line.find("light");
+        if (findStr != string::npos) {
+            t = light_t;
+        }
+
+        findStr = line.find("sphere");
+        if (findStr != string::npos) {
+            t = sphere_t;
+        }
+
+        findStr = line.find("plane");
+        if (findStr != string::npos) {
+            t = plane_t;
+        }
+
+        findStr = line.find("trianlge");
+        if (findStr != string::npos) {
+            t = triangle_t;
+        }
+
+        findStr = line.find("box");
+        if (findStr != string::npos) {
+            t = box_t;
+        }
+
+        findStr = line.find("cone");
+        if (findStr != string::npos) {
+            t = cone_t;
+        }
+
+        //don't include comments
+        if (t != comment_t) {
+            tempStr.append(line);
+            tempStr.append("\n");
+        }
+
+        if (t == light_t && tempStr.compare("\n") != 0) {
+            lightVec->push_back(tempStr);
+            tempStr = "";
+        }
+        else if (t == camera_t && line.compare("}") == 0) {
+            cameraVec->push_back(tempStr);
+            tempStr = "";
+        }
+        else if (t == sphere_t && line.compare("}") == 0) {
+            sphereVec->push_back(tempStr);
+            tempStr = "";
+        }
+        else if (t == plane_t && line.compare("}") == 0) {
+            planeVec->push_back(tempStr);
+            tempStr = "";
+        }
+        else if (t == box_t && line.compare("}") == 0) {
+            boxVec->push_back(tempStr);
+            tempStr = "";
+        }
+        else if (t == cone_t && line.compare("}") == 0) {
+            coneVec->push_back(tempStr);
+            tempStr = "";
+        }
+    }
+
+
+}
 
 
 vector<double> parse_vect(string context, string word) {
@@ -209,97 +295,12 @@ vector<Plane*> parse_plane(vector<string> planeList) {
     return planes;
 }
 
-void parse_objects(char *filename, vector<string> *cameraVec, 
-                   vector<string> *lightVec, vector<string> *sphereVec, 
-                   vector<string> *planeVec, vector<string> *triangleVec, 
-                   vector<string> *boxVec, vector<string> *coneVec) 
-{
-    fstream f;
-    size_t findStr;
-    objType t;
-    string tempStr = "";
-
-    f.open(filename, fstream::in);
-    for (string line; getline(f, line); ) {
-
-        findStr = line.find("//");
-        if (findStr != string::npos) {
-            t = comment;
-        }
-
-        findStr = line.find("camera");
-        if (findStr != string::npos) {
-            t = camera;
-        }
-
-        findStr = line.find("light");
-        if (findStr != string::npos) {
-            t = light;
-        }
-
-        findStr = line.find("sphere");
-        if (findStr != string::npos) {
-            t = sphere;
-        }
-
-        findStr = line.find("plane");
-        if (findStr != string::npos) {
-            t = plane;
-        }
-
-        findStr = line.find("trianlge");
-        if (findStr != string::npos) {
-            t = triangle;
-        }
-
-        findStr = line.find("box");
-        if (findStr != string::npos) {
-            t = box;
-        }
-
-        findStr = line.find("cone");
-        if (findStr != string::npos) {
-            t = cone;
-        }
-
-        //don't include comments
-        if (t != comment) {
-            tempStr.append(line);
-            tempStr.append("\n");
-        }
-
-        if (t == light && tempStr.compare("\n") != 0) {
-            lightVec->push_back(tempStr);
-            tempStr = "";
-        }
-        else if (t == camera && line.compare("}") == 0) {
-            cameraVec->push_back(tempStr);
-            tempStr = "";
-        }
-        else if (t == sphere && line.compare("}") == 0) {
-            sphereVec->push_back(tempStr);
-            tempStr = "";
-        }
-        else if (t == plane && line.compare("}") == 0) {
-            planeVec->push_back(tempStr);
-            tempStr = "";
-        }
-        else if (t == box && line.compare("}") == 0) {
-            boxVec->push_back(tempStr);
-            tempStr = "";
-        }
-        else if (t == cone && line.compare("}") == 0) {
-            coneVec->push_back(tempStr);
-            tempStr = "";
-        }
-    }
-}
 
 void print_help() {
     printf("Usage: raytrace render <input_filename> <width> <height>\n");
-    printf("raytrace sceneinfo <input_filename>\n");
-    printf("raytrace pixelray <input_filename> <width> <height> <x> <y>\n");
-    printf("raytrace firsthit <input_filename> <width> <height> <x> <y>\n");
+    printf("       raytrace sceneinfo <input_filename>\n");
+    printf("       raytrace pixelray <input_filename> <width> <height> <x> <y>\n");
+    printf("       raytrace firsthit <input_filename> <width> <height> <x> <y>\n");
 }
 
 int main(int argc, char **argv) {
@@ -325,7 +326,7 @@ int main(int argc, char **argv) {
         filename = argv[2];
 
         parse_objects(filename, &cameraVec, &lightVec, &sphereVec, &planeVec, &triangleVec, &boxVec, &coneVec);
-
+        
         cam = parse_camera(cameraVec);
         lights = parse_light(lightVec);
         spheres = parse_sphere(sphereVec);
@@ -333,11 +334,7 @@ int main(int argc, char **argv) {
 
         numObj = spheres.size() + planes.size();
         if (mode.compare("sceneinfo") == 0) {
-            printf("Camera:\n");
-            printf("- Location: {%.1f %.1f %.1f}\n", cam.get_loc().x, cam.get_loc().y, cam.get_loc().z);
-            printf("- Up: {%.1f %.1f %.1f}\n", cam.get_up().x, cam.get_up().y, cam.get_up().z);
-            printf("- Right: {%.5f %.1f %.1f}\n", cam.get_right().x, cam.get_right().y, cam.get_right().z);
-            printf("- Look at: {%.1f %.1f %.1f}\n", cam.get_lookAt().x, cam.get_lookAt().y, cam.get_lookAt().z);
+            cam.print();
             printf("\n");
 
 
@@ -345,8 +342,7 @@ int main(int argc, char **argv) {
             for (int i = 0; i < lights.size(); i++) {
                 light = *lights[i];
                 printf("Light[%d]:\n", lightNdx++);
-                printf("- Location: {%.1f %.1f %.1f}\n", light.get_loc().x, light.get_loc().y, light.get_loc().z);
-                printf("- Color: {%.1f %.1f %.1f}\n", light.get_rgb().x, light.get_rgb().y, light.get_rgb().z);
+                light.print();
                 printf("\n");
             }
 
@@ -354,63 +350,20 @@ int main(int argc, char **argv) {
             printf("%d object(s):\n", numObj);
             for (int i = 0; i < spheres.size(); i++) {
                 sphere = *spheres[i];
-                transform = sphere.get_transform();
 
                 printf("Object[%d]:\n", objNdx++);
-                printf("- Type: Sphere\n");
-                printf("- Center: {%.1f %.1f %.1f}\n", sphere.get_center().x, sphere.get_center().y, sphere.get_center().z);
-                printf("- Radius %.1f\n", sphere.get_rad());
-                printf("- Color: {%.1f %.1f %.1f}\n", sphere.get_rgb().x, sphere.get_rgb().y, sphere.get_rgb().z);
-                printf("- Material:\n");
-                printf("  - Ambient: %.1f\n", sphere.get_ambient());
-                printf("  - Diffuse: %.1f\n", sphere.get_diffuse());
-                printf("- Transform:\n");
-                
-                for (int j = 0; j < transform.size(); j++) {
-                    if (transform[j].w == scale_t) {
-                        printf("  - Scale: ");
-                    }
-                    else if (transform[j].w == translate_t) {
-                        printf("  - Translate: ");
-                    }
-                    else if (transform[j].w == rotate_t) {
-                        printf("  - Rotate: ");
-                    }
-                    printf("{%.1f %.1f %.1f}\n", transform[j].x, transform[j].y, transform[j].z);
-                }
-
+                sphere.print();
                 printf("\n");
             }
 
             for (int i = 0; i < planes.size(); i++) {
                 plane = planes[i];
-                transform = planes[i]->get_transform();
 
                 printf("Object[%d]:\n", objNdx++);
-                printf("- Type: Plane\n");
-                printf("- Normal: {%.1f %.1f %.1f}\n", plane->get_normal().x, plane->get_normal().y, plane->get_normal().z);
-                printf("- Distance: %.1f\n", plane->get_distance());
-                printf("- Color: {%.1f %.1f %.1f}\n", plane->get_rgb().x, plane->get_rgb().y, plane->get_rgb().z);
-                printf("- Material:\n");
-                printf("  - Ambient: %.1f\n", plane->get_ambient());
-                printf("  - Diffuse: %.1f\n", plane->get_diffuse());
-                printf("- Transform:\n");
-
-                for (int j = 0; j < transform.size(); j++) {
-                    if (transform[j].w == scale_t) {
-                        printf("  - Scale: ");
-                    }
-                    else if (transform[j].w == translate_t) {
-                        printf("  - Translate: ");
-                    }
-                    else if (transform[j].w == rotate_t) {
-                        printf("  - Rotate: ");
-                    }
-                    printf("{%.1f %.1f %.1f}\n", transform[j].x, transform[j].y, transform[j].z);
-                }
+                plane->print();
+                printf("\n");
             }
 
-            printf("\n");
         }
         else {
             width = atoi(argv[3]);
@@ -418,6 +371,6 @@ int main(int argc, char **argv) {
 
             printf("width: %d height: %d filename: %s\n", width, height, filename);
         }
-
+        
     }
 }
