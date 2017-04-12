@@ -2,7 +2,6 @@
 #include <vector>
 
 class GeomObj{
-
 public:
     GeomObj();
     GeomObj(glm::vec3 c, std::vector<glm::vec4> transf, double amb, double diff);
@@ -26,8 +25,8 @@ private:
 
 };
 
-class Sphere : public GeomObj {
 
+class Sphere : public GeomObj {
 public:
     Sphere();
     Sphere(glm::vec3 cen, glm::vec3 c, double r, double amb, double diff, std::vector<glm::vec4> transf);
@@ -43,4 +42,20 @@ private:
     double rad;
 };
 
+
+class Plane : public GeomObj {
+public:
+    Plane();
+    Plane(glm::vec3 n, glm::vec3 c, double dis, double amb, double diff, std::vector<glm::vec4> transf);
+    glm::vec3 get_normal() const {return normal;}
+    double get_distance() const {return distance;}
+
+    void set_normal(glm::vec3 v) {normal = v;}
+    void set_distance(double d) {distance = d;}
+
+
+private:
+    glm::vec3 normal;
+    double distance;
+};
 

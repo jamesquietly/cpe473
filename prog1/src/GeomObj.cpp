@@ -31,3 +31,21 @@ Sphere::Sphere(glm::vec3 cen, glm::vec3 c, double r, double amb, double diff, st
     //diffuse = diff;
     //transform = transf;
 }
+
+Plane::Plane() : GeomObj() {
+    normal = glm::vec3(0, 0, 0);
+    //rgb = glm::vec3(0, 0, 0);
+    //transform = std::vector<glm::vec4>();
+    distance = 0;
+    //ambient = 0;
+    //diffuse = 0;
+}
+
+Plane::Plane(glm::vec3 n, glm::vec3 c, double dis, double amb, double diff, std::vector<glm::vec4> transf) : GeomObj(c, transf, amb, diff) {
+    normal = glm::vec3(n.x, n.y, n.z);
+    //rgb = glm::vec3(c.x, c.y, c.z);
+    //transform = transf;
+    distance = dis;
+    //ambient = amb;
+    //diffuse = diff;
+}
