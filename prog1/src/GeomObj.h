@@ -1,12 +1,14 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <vector>
+#include <string>
 
 enum tranformType {scale_t, translate_t, rotate_t};
 
 class GeomObj{
 public:
     GeomObj();
-    GeomObj(glm::vec3 c, std::vector<glm::vec4> transf, double amb, double diff);
+    GeomObj(std::string t);
+    GeomObj(glm::vec3 c, std::vector<glm::vec4> transf, double amb, double diff, std::string typeStr);
 
     glm::vec3 get_rgb() const {return rgb;}
     std::vector<glm::vec4> get_transform() const {return transform;}
@@ -21,11 +23,13 @@ public:
     void print_transform();
     void print_color();
     void print_material();
+    virtual void print() {printf("Type:%s\n", type.c_str());}
 
 protected:
     glm::vec3 rgb;
     std::vector<glm::vec4> transform;
     double ambient, diffuse;
+    std::string type;
 
 private:
 

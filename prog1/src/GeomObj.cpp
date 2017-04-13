@@ -5,13 +5,23 @@ GeomObj::GeomObj() {
     transform = std::vector<glm::vec4>();
     ambient = 0;
     diffuse = 0;
+    type = "GeomObj";
 }
 
-GeomObj::GeomObj(glm::vec3 c, std::vector<glm::vec4> transf, double amb, double diff) {
+GeomObj::GeomObj(std::string t) {
+    rgb = glm::vec3(0, 0, 0);
+    transform = std::vector<glm::vec4>();
+    ambient = 0;
+    diffuse = 0;
+    type = t;
+}
+
+GeomObj::GeomObj(glm::vec3 c, std::vector<glm::vec4> transf, double amb, double diff, std::string typeStr) {
     rgb = glm::vec3(c.x, c.y, c.z);
     ambient = amb;
     diffuse = diff;
     transform = transf;
+    type = typeStr;
 }
 
 void GeomObj::print_transform() {
@@ -42,19 +52,19 @@ void GeomObj::print_color() {
     printf("- Color: {%.1f %.1f %.1f}\n", rgb.x, rgb.y, rgb.z);
 }
 
-Sphere::Sphere() : GeomObj() {
+Sphere::Sphere() : GeomObj("Sphere") {
     center = glm::vec3(0, 0, 0);
     rad = 0;
 
 }
 
-Sphere::Sphere(glm::vec3 cen, glm::vec3 c, double r, double amb, double diff, std::vector<glm::vec4> transf) : GeomObj(c, transf, amb, diff){
+Sphere::Sphere(glm::vec3 cen, glm::vec3 c, double r, double amb, double diff, std::vector<glm::vec4> transf) : GeomObj(c, transf, amb, diff, "Sphere"){
     center = glm::vec3(cen.x, cen.y, cen.z);
     rad = r;
 }
 
 void Sphere::print() {
-    printf("- Type: Sphere\n");
+    printf("- Type: %s\n", type.c_str());
     printf("- Center: {%.1f %.1f %.1f}\n", center.x, center.y, center.z);
     printf("- Radius %.1f\n", rad);
     GeomObj::print_color();
@@ -62,20 +72,20 @@ void Sphere::print() {
     GeomObj::print_transform();
 }
 
-Plane::Plane() : GeomObj() {
+Plane::Plane() : GeomObj("Plane") {
     normal = glm::vec3(0, 0, 0);
     distance = 0;
 
 }
 
-Plane::Plane(glm::vec3 n, glm::vec3 c, double dis, double amb, double diff, std::vector<glm::vec4> transf) : GeomObj(c, transf, amb, diff) {
+Plane::Plane(glm::vec3 n, glm::vec3 c, double dis, double amb, double diff, std::vector<glm::vec4> transf) : GeomObj(c, transf, amb, diff, "Plane") {
     normal = glm::vec3(n.x, n.y, n.z);
     distance = dis;
 
 }
 
 void Plane::print() {
-    printf("- Type: Plane\n");
+    printf("- Type: %s\n", type.c_str());
     printf("- Normal: {%.1f %.1f %.1f}\n", normal.x, normal.y, normal.z);
     printf("- Distance: %.1f\n", distance);
     GeomObj::print_color();
