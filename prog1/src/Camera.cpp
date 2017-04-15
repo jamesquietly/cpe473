@@ -33,9 +33,13 @@ void Camera::set_lookAt(glm::vec3 v) {
 }
 
 void Camera::print() {
-    printf("Camera:\n");
-    printf("- Location: {%.1f %.1f %.1f}\n", loc.x, loc.y, loc.z);
-    printf("- Up: {%.1f %.1f %.1f}\n", up.x, up.y, up.z);
-    printf("- Right: {%.5f %.1f %.1f}\n", right.x, right.y, right.z);
-    printf("- Look at: {%.1f %.1f %.1f}\n", lookAt.x, lookAt.y, lookAt.z);
+    std::cout << "Camera:\n";
+    std::cout << "- Location: {";
+    std::cout << loc.x << " " << loc.y << " " << loc.z << "}\n";
+    std::cout << "- Up: {"; 
+    std::cout << up.x << " " << up.y << " " << up.z << "}\n";
+    std::cout << "- Right: {";
+    std::cout << right.x << " " << right.y << " " << right.z << "}\n";
+    std::cout << "- Look at: {";
+    std::cout << lookAt.x << " " << lookAt.y << " " << lookAt.z << "}\n";
 }

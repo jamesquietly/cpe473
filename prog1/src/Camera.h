@@ -1,5 +1,8 @@
+#ifndef __Camera__
+#define __Camera__
+
 #include <glm/gtc/type_ptr.hpp>
-#include <cstdio>
+#include <iostream>
 
 class Camera {
     
@@ -20,3 +23,5 @@ public:
 private:
     glm::vec3 loc, up, right, lookAt;
 };
+
+#endif

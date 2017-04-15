@@ -1,5 +1,8 @@
+#ifndef __Light__
+#define __Light__
+
 #include <glm/gtc/type_ptr.hpp>
-#include <cstdio>
+#include <iostream>
 
 class Light {
 public:
@@ -15,3 +18,5 @@ public:
 private:
     glm::vec3 loc, rgb;
 };
+
+#endif

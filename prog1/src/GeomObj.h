@@ -1,6 +1,11 @@
+#ifndef __GeomObj__
+#define __GeomObj__
+
 #include <glm/gtc/type_ptr.hpp>
 #include <vector>
 #include <string>
+#include <iostream>
+#include "Ray.h"
 
 enum tranformType {scale_t, translate_t, rotate_t};
 
@@ -14,6 +19,7 @@ public:
     std::vector<glm::vec4> get_transform() const {return transform;}
     double get_ambient() const {return ambient;}
     double get_diffuse() const {return diffuse;}
+    std::string get_type() const {return type;}
 
     void set_rgb(glm::vec3 v) {rgb = glm::vec3(v.x, v.y, v.z);}
     void set_transform(std::vector<glm::vec4> t) {transform = t;}
@@ -23,7 +29,9 @@ public:
     void print_transform();
     void print_color();
     void print_material();
+
     virtual void print() {printf("Type:%s\n", type.c_str());}
+    virtual float intersect(Ray r) { return 0;}
 
 protected:
     glm::vec3 rgb;
@@ -48,6 +56,7 @@ public:
     void set_rad(double r) {rad = r;};
 
     void print();
+    float intersect(Ray r);
 
 private:
     glm::vec3 center;
@@ -66,6 +75,7 @@ public:
     void set_distance(double d) {distance = d;}
 
     void print();
+    float intersect(Ray r);
 
 
 private:
@@ -73,3 +83,4 @@ private:
     double distance;
 };
 
+#endif

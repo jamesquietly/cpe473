@@ -2,19 +2,30 @@
    Author: James Ly
 */
 
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <string>
 #include <vector>
 #include <sstream>
+#include <cfloat>
+#include <cmath>
 #include "Camera.h"
 #include "Light.h"
 #include "GeomObj.h"
+#include "Ray.h"
+#include "stb_image_write.h"
+
 
 enum objType {camera_t, light_t, sphere_t, plane_t, triangle_t, box_t, cone_t, comment_t};
 
 using namespace std;
 
+/* parse a vector within the '< >' brackets
+   returns a list of doubles
+*/
 vector<double> parse_vect(string context, string word) {
     vector<double> vect;
     int start;
@@ -41,6 +52,7 @@ vector<double> parse_vect(string context, string word) {
     return vect;
 }
 
+/* parses a single double from string */
 double parse_double(string context, string word) {
     double result;
     int start;
@@ -58,6 +70,9 @@ double parse_double(string context, string word) {
     return result;
 }
 
+/* parses camera string from file
+   returns a Camera
+*/
 Camera parse_camera(vector<string> cameraList) {
     vector<double> vect;
     glm::vec3 loc, up, right, look;
@@ -80,11 +95,12 @@ Camera parse_camera(vector<string> cameraList) {
 
     cam = Camera::Camera(loc, up, right, look);
 
-    
-    
     return cam;
 }
 
+/* given a list of light_sources from file,
+   parses them into a list of Light pointers
+*/
 vector<Light*> parse_light(vector<string> lightList) {
     vector<Light*> lights;
     vector<double> vect;
@@ -106,7 +122,10 @@ vector<Light*> parse_light(vector<string> lightList) {
     return lights;
 }
 
-vector<Sphere*> parse_sphere(vector<string> sphereList) {
+/* given a sphere string from file,
+   parses into a sphere object
+*/
+Sphere* parse_sphere(string sphereList) {
     vector<Sphere*> spheres;
     vector<double> vect;
     vector<glm::vec4> transform;
@@ -117,47 +136,48 @@ vector<Sphere*> parse_sphere(vector<string> sphereList) {
     double rad, amb, diff;
 
 
-    for (int i = 0; i < sphereList.size(); i++) {
 
-        vect = parse_vect(sphereList[i], "color rgb");
-        color = glm::vec3(vect[0], vect[1], vect[2]);
+    vect = parse_vect(sphereList, "color rgb");
+    color = glm::vec3(vect[0], vect[1], vect[2]);
 
-        vect = parse_vect(sphereList[i], "sphere {");
-        cen = glm::vec3(vect[0], vect[1], vect[2]);
+    vect = parse_vect(sphereList, "sphere {");
+    cen = glm::vec3(vect[0], vect[1], vect[2]);
 
-        rad = parse_double(sphereList[i], ">,");
+    rad = parse_double(sphereList, ">,");
 
-        amb = parse_double(sphereList[i], "ambient");
+    amb = parse_double(sphereList, "ambient");
 
-        diff = parse_double(sphereList[i], "diffuse");
+    diff = parse_double(sphereList, "diffuse");
 
-        while ((pos = sphereList[i].find(delimiter)) != string::npos ) {
-            tempStr = sphereList[i].substr(0, pos);
-            if (tempStr.find("scale") != string::npos) {
-                vect = parse_vect(tempStr, "scale");
-                transform.push_back(glm::vec4(vect[0], vect[1], vect[2], scale_t));
-            }
-            else if (tempStr.find("translate") != string::npos) {
-                vect = parse_vect(tempStr, "translate");
-                transform.push_back(glm::vec4(vect[0], vect[1], vect[2], translate_t));
-            }
-            else if (tempStr.find("rotate") != string::npos) {
-                vect = parse_vect(tempStr, "rotate");
-                transform.push_back(glm::vec4(vect[0], vect[1], vect[2], rotate_t));
-            }
-            sphereList[i].erase(0, pos + delimiter.length());
+    while ((pos = sphereList.find(delimiter)) != string::npos ) {
+        tempStr = sphereList.substr(0, pos);
+        if (tempStr.find("scale") != string::npos) {
+            vect = parse_vect(tempStr, "scale");
+            transform.push_back(glm::vec4(vect[0], vect[1], vect[2], scale_t));
         }
-
-
-        sphere = new Sphere(cen, color, rad, amb, diff, transform);
-        spheres.push_back(sphere);
-
-        transform.clear();
+        else if (tempStr.find("translate") != string::npos) {
+            vect = parse_vect(tempStr, "translate");
+            transform.push_back(glm::vec4(vect[0], vect[1], vect[2], translate_t));
+        }
+        else if (tempStr.find("rotate") != string::npos) {
+            vect = parse_vect(tempStr, "rotate");
+            transform.push_back(glm::vec4(vect[0], vect[1], vect[2], rotate_t));
+        }
+        sphereList.erase(0, pos + delimiter.length());
     }
-    return spheres;
+
+
+    sphere = new Sphere(cen, color, rad, amb, diff, transform);
+
+    transform.clear();
+    
+    return sphere;
 }
 
-vector<Plane*> parse_plane(vector<string> planeList) {
+/* given a plane string from file
+   parses it into a plane object
+*/
+Plane* parse_plane(string planeList) {
     vector<Plane*> planes;
     vector<double> vect;
     vector<glm::vec4> transform;
@@ -167,45 +187,48 @@ vector<Plane*> parse_plane(vector<string> planeList) {
     int pos = 0;
     string tempStr, delimiter = "\n";
     
-    for (int i = 0; i < planeList.size(); i++) {
-        vect = parse_vect(planeList[i], "plane {");
-        norm = glm::vec3(vect[0], vect[1], vect[2]);
-        
-        vect = parse_vect(planeList[i], "color rgb");
-        color = glm::vec3(vect[0], vect[1], vect[2]);
 
-        dis = parse_double(planeList[i], ">,");
+    vect = parse_vect(planeList, "plane {");
+    norm = glm::vec3(vect[0], vect[1], vect[2]);
+    
+    vect = parse_vect(planeList, "color rgb");
+    color = glm::vec3(vect[0], vect[1], vect[2]);
 
-        amb = parse_double(planeList[i], "ambient");
+    dis = parse_double(planeList, ">,");
 
-        diff = parse_double(planeList[i], "diffuse");
+    amb = parse_double(planeList, "ambient");
 
-        while ((pos = planeList[i].find(delimiter)) != string::npos ) {
-            tempStr = planeList[i].substr(0, pos);
-            if (tempStr.find("scale") != string::npos) {
-                vect = parse_vect(tempStr, "scale");
-                transform.push_back(glm::vec4(vect[0], vect[1], vect[2], scale_t));
-            }
-            else if (tempStr.find("translate") != string::npos) {
-                vect = parse_vect(tempStr, "translate");
-                transform.push_back(glm::vec4(vect[0], vect[1], vect[2], translate_t));
-            }
-            else if (tempStr.find("rotate") != string::npos) {
-                vect = parse_vect(tempStr, "rotate");
-                transform.push_back(glm::vec4(vect[0], vect[1], vect[2], rotate_t));
-            }
-            planeList[i].erase(0, pos + delimiter.length());
+    diff = parse_double(planeList, "diffuse");
+
+    while ((pos = planeList.find(delimiter)) != string::npos ) {
+        tempStr = planeList.substr(0, pos);
+        if (tempStr.find("scale") != string::npos) {
+            vect = parse_vect(tempStr, "scale");
+            transform.push_back(glm::vec4(vect[0], vect[1], vect[2], scale_t));
         }
-
-        plane = new Plane(norm, color, dis, amb, diff, transform);
-        planes.push_back(plane);
-        transform.clear();
+        else if (tempStr.find("translate") != string::npos) {
+            vect = parse_vect(tempStr, "translate");
+            transform.push_back(glm::vec4(vect[0], vect[1], vect[2], translate_t));
+        }
+        else if (tempStr.find("rotate") != string::npos) {
+            vect = parse_vect(tempStr, "rotate");
+            transform.push_back(glm::vec4(vect[0], vect[1], vect[2], rotate_t));
+        }
+        planeList.erase(0, pos + delimiter.length());
     }
 
-    return planes;
+    plane = new Plane(norm, color, dis, amb, diff, transform);
+
+    transform.clear();
+
+    return plane;
 }
 
-void parse_objects(char *filename, Camera *cameraObj, 
+/* parse pov files
+   returns true if we can find file
+   else returns false
+*/
+bool parse_objects(char *filename, Camera *cameraObj, 
                    vector<Light*> *lights, vector<GeomObj*> *oList) 
 {
     fstream f;
@@ -215,6 +238,9 @@ void parse_objects(char *filename, Camera *cameraObj,
     vector<string> cameraVec, lightVec, sphereVec, planeVec, triangleVec, boxVec, coneVec;
     vector<Sphere*> sphereList;
     vector<Plane*> planeList;
+    Sphere* sObj;
+    Plane* planeObj;
+    bool result;
 
     f.open(filename, fstream::in);
     if (f.is_open()) {
@@ -275,11 +301,17 @@ void parse_objects(char *filename, Camera *cameraObj,
                 tempStr = "";
             }
             else if (t == sphere_t && line.compare("}") == 0) {
-                sphereVec.push_back(tempStr);
+                //sphereVec.push_back(tempStr);
+                string spStr(tempStr);
+                sObj = parse_sphere(spStr);
+                oList->push_back(sObj);
                 tempStr = "";
             }
             else if (t == plane_t && line.compare("}") == 0) {
-                planeVec.push_back(tempStr);
+                //planeVec.push_back(tempStr);
+                string planeStr(tempStr);
+                planeObj = parse_plane(planeStr);
+                oList->push_back(planeObj);
                 tempStr = "";
             }
             else if (t == box_t && line.compare("}") == 0) {
@@ -294,75 +326,202 @@ void parse_objects(char *filename, Camera *cameraObj,
 
         *cameraObj = parse_camera(cameraVec);
         *lights = parse_light(lightVec);
-        sphereList = parse_sphere(sphereVec);
-        planeList = parse_plane(planeVec);
 
-        for (int i = 0; i < sphereList.size(); i++) {
-            oList->push_back(sphereList[i]);
-        }
-        for (int i = 0; i < planeList.size(); i++) {
-            oList->push_back(planeList[i]);
-        }
+        result = true;
     }
     else {
-        printf("Couldn't open %s\n", filename);
+        result = false;
     }
 
+    return result;
+
 }
 
-
+/* print help message */
 void print_help() {
-    printf("Usage: raytrace render <input_filename> <width> <height>\n");
-    printf("       raytrace sceneinfo <input_filename>\n");
-    printf("       raytrace pixelray <input_filename> <width> <height> <x> <y>\n");
-    printf("       raytrace firsthit <input_filename> <width> <height> <x> <y>\n");
+    cout << "Usage: raytrace render <input_filename> <width> <height>\n";
+    cout << "       raytrace sceneinfo <input_filename>\n";
+    cout << "       raytrace pixelray <input_filename> <width> <height> <x> <y>\n";
+    cout << "       raytrace firsthit <input_filename> <width> <height> <x> <y>\n";
 }
+
+/* create a single ray*/
+Ray* create_ray(Camera cam, int width, int height, int i, int j) {
+    float Us, Vs, Ws;
+    glm::vec3 s, u, v, w, dir, p0;
+    Ray* ray;
+
+    p0 = cam.get_loc();
+
+    Us = (i + 0.5)/width - 0.5;
+    Vs = (j + 0.5)/height - 0.5;
+    Ws = -1.0f;
+
+    u = cam.get_right();
+    v = cam.get_up();
+    w = -1.0f * glm::normalize(cam.get_lookAt() - p0);
+
+    s = p0 + Us * u + Vs * v + Ws * w;
+
+    dir = glm::normalize(s - p0);
+
+    ray = new Ray(p0, dir);
+
+    return ray;
+
+}
+
+/* check list of t values to see if there are any hits */
+int check_hit(vector<float> values) {
+    float noHit = -1;
+    int minNdx = -1;
+    float minValue = FLT_MAX;
+
+    for (int i = 0; i < values.size(); i++) {
+        if (values[i] != noHit && values[i] < minValue) {
+            minValue = values[i];
+            minNdx = i;
+        }
+    }
+
+    return minNdx;
+
+}
+
 
 int main(int argc, char **argv) {
 
-    int width, height;
+    int width, height, inX, inY, minNdx, numChannels;
     char *filename;
     vector<Light*> lights;
     vector<GeomObj*> objList;
+    vector<float> tValues;
+    glm::vec3 color;
     Camera cam;
+    Ray* ray;
+    float t;
+    bool parsedFile;
+
+    cout << std::setprecision(4);
 
     if (argc < 3) {
         print_help();
     }
     else {
         string mode(argv[1]);
-
         filename = argv[2];
 
-        parse_objects(filename, &cam, &lights, &objList);
+        parsedFile = parse_objects(filename, &cam, &lights, &objList);
 
-        if (mode.compare("sceneinfo") == 0) {
+        if (parsedFile) {
+            if (mode.compare("sceneinfo") == 0) {
 
-            cam.print();
-            printf("\n");
-            
-            printf("%d light(s):\n", (int)lights.size());
-            for (int i = 0; i < lights.size(); i++) {
-                printf("Light[%d]:\n", i);
-                lights[i]->print();
-                printf("\n");
+                cam.print();
+                
+                cout << "\n---\n\n" << lights.size() << " light(s)\n\n";
+                for (int i = 0; i < lights.size(); i++) {
+                    cout << "Light[" << i << "]:\n";
+                    lights[i]->print();
+                    cout << endl;
+                }
+
+                cout << "---\n\n" << objList.size() << " object(s)\n\n";
+                for (int i = 0; i < objList.size(); i++) {
+                    cout << "Object[" << i << "]:\n";
+                    objList[i]->print();
+                    cout << endl;
+                }
+
             }
+            else if (mode.compare("render") == 0) {
+                width = atoi(argv[3]);
+                height = atoi(argv[4]);
+                numChannels = 3;
+                string outName = "output.png";
 
-            printf("%d object(s)\n", (int)objList.size());
-            for (int i = 0; i < objList.size(); i++) {
-                printf("Object[%d]:\n", i);
-                objList[i]->print();
-                printf("\n");
+                unsigned char *data = new unsigned char[width * height * numChannels];
+
+
+                for (int y = 0; y < height; y++) {
+                    for (int x = 0; x < width; x++) {
+                        for (int z = 0; z < objList.size(); z++) {
+                            ray = create_ray(cam, width, height, x, y);
+                            t = objList[z]->intersect(*ray);
+                            tValues.push_back(t);
+                        }
+
+                        unsigned char red, green, blue;
+
+                        // -1 means no hits
+                        minNdx = check_hit(tValues);
+                        if (minNdx != -1) {
+                            color = objList[minNdx]->get_rgb();
+                            red = (unsigned char) std::round(color.x * 255);
+                            green = (unsigned char) std::round(color.y * 255);
+                            blue = (unsigned char) std::round(color.z * 255);
+                        }
+                        else {
+                            red = 0;
+                            green = 0;
+                            blue = 0;
+                        }
+                        
+                        data[(width * numChannels) * (height - 1 - y) + numChannels * x + 0] = red;
+                        data[(width * numChannels) * (height - 1 - y) + numChannels * x + 1] = green;
+                        data[(width * numChannels) * (height - 1 - y) + numChannels * x + 2] = blue;
+                        tValues.clear();
+                    }
+                }
+
+                stbi_write_png(outName.c_str(), width, height, numChannels, data, width * numChannels);
+                delete[] data;
+
             }
+            else if (mode.compare("pixelray") == 0) {
+                width = atoi(argv[3]);
+                height = atoi(argv[4]);
+                inX = atoi(argv[5]);
+                inY = atoi(argv[6]);
 
+                ray = create_ray(cam, width, height, inX, inY);
+
+                cout << "Pixel: [" << inX << " " << inY << "] ";
+                ray->print();
+                cout << "\n";
+            }
+            else if (mode.compare("firsthit") == 0) {
+                width = atoi(argv[3]);
+                height = atoi(argv[4]);
+                inX = atoi(argv[5]);
+                inY = atoi(argv[6]);
+
+                ray = create_ray(cam, width, height, inX, inY);
+
+                for (int i = 0; i < objList.size(); i ++) {
+                    t = objList[i]->intersect(*ray);
+                    tValues.push_back(t);
+                }
+
+                cout << "Pixel: [" << inX << " " << inY << "] ";
+                ray->print();
+                cout << "\n";
+                
+                // -1 means no hits
+                minNdx = check_hit(tValues);
+                if (minNdx != -1) {
+                    cout << "T = " << tValues[minNdx] << endl;
+                    cout << "Object Type: " << objList[minNdx]->get_type() << endl;
+                    color = objList[minNdx]->get_rgb();
+                    cout << "Color: ";
+                    cout << color.x << " " << color.y << " " << color.z << endl;
+                }
+                else {
+                    cout << "No Hit" << endl;
+                }
+            }
         }
-        else if (mode.compare("render") == 0) {
-            width = atoi(argv[3]);
-            height = atoi(argv[4]);
-
-            printf("width: %d height: %d filename: %s\n", width, height, filename);
-
+        else {
+            cout << "Couldn't open " << filename << endl;
         }
-    
     }
 }

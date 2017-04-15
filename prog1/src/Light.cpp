@@ -19,7 +19,9 @@ void Light::set_rgb(glm::vec3 v) {
 }
 
 void Light::print() {
-    printf("- Location: {%.1f %.1f %.1f}\n", loc.x, loc.y, loc.z);
-    printf("- Color: {%.1f %.1f %.1f}\n", rgb.x, rgb.y, rgb.z);
+    std::cout << "- Location: {";
+    std::cout << loc.x << " " << loc.y << " " << loc.z << "}\n";
+    std::cout << "- Color: {";
+    std::cout << rgb.x << " " << rgb.y << " " << rgb.z << "}\n";
 }
 
