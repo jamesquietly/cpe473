@@ -93,7 +93,7 @@ Camera parse_camera(vector<string> cameraList) {
     vect = parse_vect(cameraList[0], "look_at");
     look = glm::vec3(vect[0], (float)vect[1], vect[2]);
 
-    cam = Camera::Camera(loc, up, right, look);
+    cam = Camera(loc, up, right, look);
 
     return cam;
 }
