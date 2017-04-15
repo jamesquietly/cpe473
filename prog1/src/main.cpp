@@ -485,9 +485,9 @@ int main(int argc, char **argv) {
 
                 ray = create_ray(cam, width, height, inX, inY);
 
-                cout << "Pixel: [" << inX << " " << inY << "] ";
+                cout << "Pixel: [" << inX << ", " << inY << "] ";
                 ray->print();
-                cout << "\n";
+                cout << endl;
             }
             else if (mode.compare("firsthit") == 0) {
                 width = atoi(argv[3]);
@@ -502,9 +502,9 @@ int main(int argc, char **argv) {
                     tValues.push_back(t);
                 }
 
-                cout << "Pixel: [" << inX << " " << inY << "] ";
+                cout << "Pixel: [" << inX << ", " << inY << "] ";
                 ray->print();
-                cout << "\n";
+                cout << endl;
                 
                 // -1 means no hits
                 minNdx = check_hit(tValues);
