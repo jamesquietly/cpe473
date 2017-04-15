@@ -429,7 +429,10 @@ int main(int argc, char **argv) {
                 for (int i = 0; i < objList.size(); i++) {
                     cout << "Object[" << i << "]:\n";
                     objList[i]->print();
-                    cout << endl;
+                    //exclude empty line at end
+                    if (i != objList.size() - 1) {
+                        cout << endl;
+                    }
                 }
 
             }

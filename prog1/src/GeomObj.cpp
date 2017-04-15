@@ -74,7 +74,7 @@ void Sphere::print() {
     std::cout << "- Radius: " << rad << std::endl;
     GeomObj::print_color();
     GeomObj::print_material();
-    GeomObj::print_transform();
+    //GeomObj::print_transform();
 }
 
 float Sphere::intersect(Ray r) {
@@ -130,7 +130,7 @@ void Plane::print() {
     std::cout << "- Distance: " << distance << std::endl;
     GeomObj::print_color();
     GeomObj::print_material();
-    GeomObj::print_transform();
+    //GeomObj::print_transform();
 }
 
 float Plane::intersect(Ray r) {
