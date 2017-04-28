@@ -32,6 +32,7 @@ public:
 
     virtual void print() {printf("Type:%s\n", type.c_str());}
     virtual float intersect(Ray r) { return 0;}
+    virtual glm::vec3 get_normal(glm::vec3 pt){return glm::vec3(0,0,0);}
 
 protected:
     glm::vec3 rgb;
@@ -57,6 +58,7 @@ public:
 
     void print();
     float intersect(Ray r);
+    glm::vec3 get_normal(glm::vec3 pt) {return glm::normalize(pt - center);}
 
 private:
     glm::vec3 center;
@@ -76,6 +78,7 @@ public:
 
     void print();
     float intersect(Ray r);
+    glm::vec3 get_normal(glm::vec3 pt) {return normal;}
 
 
 private:

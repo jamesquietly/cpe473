@@ -389,6 +389,97 @@ int check_hit(vector<float> values) {
 }
 
 
+glm::vec3 blinn_phong(vector<Light*> lightList, GeomObj* obj, Ray ray, float t, vector<GeomObj*> objList) {
+    glm::vec3 result, lightColor, ambColor, specColor, diffColor; 
+    glm::vec3 lightDir, rayDir, V, H, point, sumDiff, sumSpec, normal, objColor;
+    float shininess, Ka, Kd, Ks, tLight, epsilon;
+    int minNdx;
+    Ray lightRay;
+    vector<float> tValues;
+
+    Ka = (float)obj->get_ambient();
+    Kd = (float)obj->get_diffuse();
+    Ks = 0.4f;
+    epsilon = 0.001f;
+
+    objColor = obj->get_rgb();
+    rayDir = ray.get_direction();
+    point = ray.get_pt() + (t * rayDir);
+    normal = obj->get_normal(point);
+    V = glm::normalize(-1.0f * rayDir);
+    ambColor = (float)Ka * objColor;
+    shininess = 2.0f;
+    sumDiff = glm::vec3(0, 0, 0);
+    sumSpec = glm::vec3(0, 0, 0);
+
+    for (int i = 0; i < lightList.size(); i++) {
+        lightDir = lightList[i]->get_loc() - point;
+        lightDir = glm::normalize(lightDir);
+        lightRay = Ray(point + epsilon * lightDir, lightDir);
+
+        //check to see if light ray hits any object
+        for (int j = 0; j < objList.size(); j++) {
+            tLight = objList[j]->intersect(lightRay);
+            tValues.push_back(tLight);
+        }
+        minNdx = check_hit(tValues);
+        
+        // -1 means no hits along light ray
+        //if (minNdx == -1) {
+            lightColor = lightList[i]->get_rgb();
+            diffColor = (float)Kd * objColor  * lightColor * glm::max(0.0f, glm::dot(normal, lightDir));
+            H = glm::normalize(V + lightDir);
+            specColor = (float)Ks * objColor  * lightColor * glm::max(0.0f, glm::pow(glm::dot(H, normal), shininess));
+            sumDiff += diffColor;
+            sumSpec += specColor;
+        //}
+    }
+    
+    result = ambColor + sumDiff + sumSpec;
+    return result;
+
+}
+
+glm::vec3 cook_torrance(vector<Light*> lightList, GeomObj* obj, Ray ray, float t, vector<GeomObj*> objList) {
+    glm::vec3 result, objColor, ambColor, diffColor, specColor, rayDir, point;
+    glm::vec3 normal, lightColor, V, H, lightDir, sumDiffSpec, Rd;
+    float s, d, power, roughness, Rs, DBlinn, G, F0, F, ndxOfRefrac, G1, G2;
+
+    s = 0.5f;
+    d = 1.0f - s;
+    objColor = obj->get_rgb();
+    ambColor = (float)obj->get_ambient() * objColor;
+    Rd = (float)obj->get_diffuse() * objColor;
+    rayDir = ray.get_direction();
+    point = ray.get_pt() + (t * rayDir);
+    normal = obj->get_normal(point);
+    V = glm::normalize(-1.0f * rayDir);
+    power = 2.0f;
+    roughness = glm::sqrt(2.0f/(2.0f + power));
+    ndxOfRefrac = 1.0f;
+    sumDiffSpec = glm::vec3(0, 0, 0);
+
+    for (int i = 0; i < lightList.size(); i++) {
+        lightColor = lightList[i]->get_rgb();
+        lightDir = lightList[i]->get_loc() - point;
+        H = glm::normalize(V + lightDir);
+        DBlinn = (1/(3.14f * glm::pow(roughness, 2.0f))) * glm::pow(glm::dot(H, normal), ( (2.0f/glm::pow(roughness, 2)) - 2) );
+        G1 = (2.0f * glm::dot(H, normal) * glm::dot(normal, V)) / glm::dot(V, H);
+        G2 = (2.0f * glm::dot(H, normal) * glm::dot(normal, lightDir)) / glm::dot(V, H) ;
+        G = glm::min(1.0f, glm::min(G1, G2));
+        F0 = glm::pow(ndxOfRefrac - 1.0f, 2.0f)/glm::pow(ndxOfRefrac + 1.0f, 2.0f);
+        F = F0 + (1.0f - F0) * glm::pow(1.0f - glm::dot(V, H), 5.0f);
+        Rs = (DBlinn * G * F) / (4.0f * glm::dot(normal, V));
+        sumDiffSpec += lightColor * objColor * ((d * Rd) + (s * Rs));
+    }
+
+    result = ambColor + sumDiffSpec;
+
+    return result;
+
+}
+
+
 int main(int argc, char **argv) {
 
     int width, height, inX, inY, minNdx, numChannels;
@@ -396,11 +487,12 @@ int main(int argc, char **argv) {
     vector<Light*> lights;
     vector<GeomObj*> objList;
     vector<float> tValues;
-    glm::vec3 color;
+    glm::vec3 color, objColor;
     Camera cam;
     Ray* ray;
     float t;
     bool parsedFile;
+    string altArg;
 
     cout << std::setprecision(4);
 
@@ -410,6 +502,7 @@ int main(int argc, char **argv) {
     else {
         string mode(argv[1]);
         filename = argv[2];
+        altArg = "null";
 
         parsedFile = parse_objects(filename, &cam, &lights, &objList);
 
@@ -442,13 +535,17 @@ int main(int argc, char **argv) {
                 numChannels = 3;
                 string outName = "output.png";
 
+                if (argc > 5) {
+                    altArg = string(argv[5]);
+                }
+
                 unsigned char *data = new unsigned char[width * height * numChannels];
 
 
                 for (int y = 0; y < height; y++) {
                     for (int x = 0; x < width; x++) {
+                        ray = create_ray(cam, width, height, x, y);
                         for (int z = 0; z < objList.size(); z++) {
-                            ray = create_ray(cam, width, height, x, y);
                             t = objList[z]->intersect(*ray);
                             tValues.push_back(t);
                         }
@@ -458,10 +555,16 @@ int main(int argc, char **argv) {
                         // -1 means no hits
                         minNdx = check_hit(tValues);
                         if (minNdx != -1) {
-                            color = objList[minNdx]->get_rgb();
-                            red = (unsigned char) std::round(color.x * 255);
-                            green = (unsigned char) std::round(color.y * 255);
-                            blue = (unsigned char) std::round(color.z * 255);
+                            //color = objList[minNdx]->get_rgb();
+                            if(altArg.compare("-altbrdf") == 0) {
+                                color = cook_torrance(lights, objList[minNdx], *ray, tValues[minNdx], objList);
+                            }
+                            else {
+                                color = blinn_phong(lights, objList[minNdx], *ray, tValues[minNdx], objList);
+                            }
+                            red = (unsigned char) std::round(glm::min(1.0f, color.x) * 255);
+                            green = (unsigned char) std::round(glm::min(1.0f, color.y) * 255);
+                            blue = (unsigned char) std::round(glm::min(1.0f, color.z) * 255);
                         }
                         else {
                             red = 0;
@@ -521,6 +624,51 @@ int main(int argc, char **argv) {
                 else {
                     cout << "No Hit" << endl;
                 }
+            }
+            else if (mode.compare("pixelcolor") == 0) {
+                width = atoi(argv[3]);
+                height = atoi(argv[4]);
+                inX = atoi(argv[5]);
+                inY = atoi(argv[6]);
+
+                if (argc > 7) {
+                    altArg = string(argv[7]);
+                }
+
+                ray = create_ray(cam, width, height, inX, inY);
+
+                for (int i = 0; i < objList.size(); i ++) {
+                    t = objList[i]->intersect(*ray);
+                    tValues.push_back(t);
+                }
+
+                cout << "Pixel: [" << inX << ", " << inY << "] ";
+                ray->print();
+                cout << endl;
+
+                // -1 means no hits
+                minNdx = check_hit(tValues);
+                if (minNdx != -1) {
+                    cout << "T = " << tValues[minNdx] << endl;
+                    cout << "Object Type: " << objList[minNdx]->get_type() << endl;
+                    if (altArg.compare("-altbrdf") == 0) {
+                        cout << "BRDF: Alternate" << endl;
+                        color = cook_torrance(lights, objList[minNdx], *ray, tValues[minNdx], objList);
+                    }
+                    else {
+                        cout << "BRDF: Blinn-Phong" << endl;
+                        color = blinn_phong(lights, objList[minNdx], *ray, tValues[minNdx], objList);
+                    }
+                    //color = objList[minNdx]->get_rgb();
+                    cout << "Color: (";
+                    cout << std::round(glm::min(1.0f, color.x) * 255) << ", ";
+                    cout << std::round(glm::min(1.0f, color.y) * 255) << ", "; 
+                    cout << std::round(glm::min(1.0f, color.z) * 255) << ")" << endl;
+                }
+                else {
+                    cout << "No Hit" << endl;
+                }
+
             }
         }
         else {
