@@ -61,8 +61,15 @@ double parse_double(string context, string word) {
 
     start = context.find(word);
     tempStr = context.substr(start, string::npos);
-    start = tempStr.find(" ");
-    tempStr = tempStr.substr(start, string::npos);
+    if (word.compare(">,") == 0) {
+        start = tempStr.find(",");
+        tempStr = tempStr.substr(start + 1, string::npos);
+    }
+    else {
+        start = tempStr.find(" ");
+        tempStr = tempStr.substr(start, string::npos);
+    }
+
 
     ss.str(tempStr);
     ss >> result;
@@ -478,7 +485,8 @@ glm::vec3 blinn_phong(vector<Light*> lightList, GeomObj* obj, Ray ray, float t, 
 
             } 
 
-        }
+        } 
+
     }
     
     result = ambColor + sumDiff + sumSpec;
