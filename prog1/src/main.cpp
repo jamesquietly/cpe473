@@ -133,8 +133,8 @@ Sphere* parse_sphere(string sphereList) {
     Sphere* sphere;
     int pos = 0;
     string delimiter = "\n", tempStr;
-    double rad, amb, diff;
-
+    double rad, amb, diff, spec, rough;
+    size_t found;
 
 
     vect = parse_vect(sphereList, "color rgb");
@@ -148,6 +148,18 @@ Sphere* parse_sphere(string sphereList) {
     amb = parse_double(sphereList, "ambient");
 
     diff = parse_double(sphereList, "diffuse");
+
+    spec = 0;
+    found = sphereList.find("specular");
+    if (found != string::npos) {
+        spec = parse_double(sphereList, "specular");
+    }
+    
+    rough = 0.5;
+    found = sphereList.find("roughness");
+    if (found != string::npos) {
+        rough = parse_double(sphereList, "roughness");
+    }
 
     while ((pos = sphereList.find(delimiter)) != string::npos ) {
         tempStr = sphereList.substr(0, pos);
@@ -167,7 +179,7 @@ Sphere* parse_sphere(string sphereList) {
     }
 
 
-    sphere = new Sphere(cen, color, rad, amb, diff, transform);
+    sphere = new Sphere(cen, color, rad, amb, diff, spec, rough, transform);
 
     transform.clear();
     
@@ -183,9 +195,10 @@ Plane* parse_plane(string planeList) {
     vector<glm::vec4> transform;
     glm::vec3 color, norm;
     Plane* plane;
-    double dis, amb, diff;
+    double dis, amb, diff, spec, rough;
     int pos = 0;
     string tempStr, delimiter = "\n";
+    size_t found;
     
 
     vect = parse_vect(planeList, "plane {");
@@ -199,6 +212,19 @@ Plane* parse_plane(string planeList) {
     amb = parse_double(planeList, "ambient");
 
     diff = parse_double(planeList, "diffuse");
+
+    spec = 0;
+    found = planeList.find("specular");
+    if (found != string::npos) {
+        spec = parse_double(planeList, "specular");
+    }
+
+    rough = 0.5;
+    found = planeList.find("roughness");
+    if (found != string::npos) {
+        rough = parse_double(planeList, "roughness");
+    }
+
 
     while ((pos = planeList.find(delimiter)) != string::npos ) {
         tempStr = planeList.substr(0, pos);
@@ -217,7 +243,7 @@ Plane* parse_plane(string planeList) {
         planeList.erase(0, pos + delimiter.length());
     }
 
-    plane = new Plane(norm, color, dis, amb, diff, transform);
+    plane = new Plane(norm, color, dis, amb, diff, spec, rough, transform);
 
     transform.clear();
 
@@ -392,14 +418,15 @@ int check_hit(vector<float> values) {
 glm::vec3 blinn_phong(vector<Light*> lightList, GeomObj* obj, Ray ray, float t, vector<GeomObj*> objList) {
     glm::vec3 result, lightColor, ambColor, specColor, diffColor; 
     glm::vec3 lightDir, rayDir, V, H, point, sumDiff, sumSpec, normal, objColor;
-    float shininess, Ka, Kd, Ks, tLight, epsilon;
+    glm::vec3 epsPoint;
+    float shininess, Ka, Kd, Ks, tLight, epsilon, distToLight, distToIntersect;
     int minNdx;
     Ray lightRay;
     vector<float> tValues;
 
     Ka = (float)obj->get_ambient();
     Kd = (float)obj->get_diffuse();
-    Ks = 0.4f;
+    Ks = (float)obj->get_specular();
     epsilon = 0.001f;
 
     objColor = obj->get_rgb();
@@ -408,14 +435,15 @@ glm::vec3 blinn_phong(vector<Light*> lightList, GeomObj* obj, Ray ray, float t, 
     normal = obj->get_normal(point);
     V = glm::normalize(-1.0f * rayDir);
     ambColor = (float)Ka * objColor;
-    shininess = 2.0f;
+    shininess = (2.0f / glm::pow((float)obj->get_roughness(), 2) - 2.0f);
     sumDiff = glm::vec3(0, 0, 0);
     sumSpec = glm::vec3(0, 0, 0);
 
     for (int i = 0; i < lightList.size(); i++) {
         lightDir = lightList[i]->get_loc() - point;
         lightDir = glm::normalize(lightDir);
-        lightRay = Ray(point + epsilon * lightDir, lightDir);
+        epsPoint = point + epsilon * lightDir;
+        lightRay = Ray(epsPoint, lightDir);
 
         //check to see if light ray hits any object
         for (int j = 0; j < objList.size(); j++) {
@@ -423,16 +451,34 @@ glm::vec3 blinn_phong(vector<Light*> lightList, GeomObj* obj, Ray ray, float t, 
             tValues.push_back(tLight);
         }
         minNdx = check_hit(tValues);
+
         
-        // -1 means no hits along light ray
-        //if (minNdx == -1) {
+        // -1 means no hits along light ray, shadow check
+        if (minNdx == -1) {
+
             lightColor = lightList[i]->get_rgb();
-            diffColor = (float)Kd * objColor  * lightColor * glm::max(0.0f, glm::dot(normal, lightDir));
+            diffColor = Kd * objColor  * lightColor * glm::max(0.0f, glm::dot(normal, lightDir));
             H = glm::normalize(V + lightDir);
-            specColor = (float)Ks * objColor  * lightColor * glm::max(0.0f, glm::pow(glm::dot(H, normal), shininess));
+            specColor = Ks * objColor  * lightColor * glm::max(0.0f, glm::pow(glm::dot(H, normal), shininess));
             sumDiff += diffColor;
             sumSpec += specColor;
-        //}
+        }
+        else if (minNdx >= 0) {
+            distToLight = glm::distance(lightList[i]->get_loc(), epsPoint);
+            distToIntersect = glm::distance(epsPoint + (tValues[minNdx] * lightDir), epsPoint);
+
+            //check if light ray intersection is behind the light source
+            if (distToIntersect > distToLight) {
+                lightColor = lightList[i]->get_rgb();
+                diffColor = Kd * objColor  * lightColor * glm::max(0.0f, glm::dot(normal, lightDir));
+                H = glm::normalize(V + lightDir);
+                specColor = Ks * objColor  * lightColor * glm::max(0.0f, glm::pow(glm::dot(H, normal), shininess));
+                sumDiff += diffColor;
+                sumSpec += specColor;
+
+            } 
+
+        }
     }
     
     result = ambColor + sumDiff + sumSpec;
@@ -442,34 +488,34 @@ glm::vec3 blinn_phong(vector<Light*> lightList, GeomObj* obj, Ray ray, float t, 
 
 glm::vec3 cook_torrance(vector<Light*> lightList, GeomObj* obj, Ray ray, float t, vector<GeomObj*> objList) {
     glm::vec3 result, objColor, ambColor, diffColor, specColor, rayDir, point;
-    glm::vec3 normal, lightColor, V, H, lightDir, sumDiffSpec, Rd;
-    float s, d, power, roughness, Rs, DBlinn, G, F0, F, ndxOfRefrac, G1, G2;
+    glm::vec3 normal, lightColor, V, H, lightDir, sumDiffSpec;
+    float s, d, roughness, Rs, DBeck, G, F0, F, ndxOfRefrac, G1, G2, tan, Rd;
 
     s = 0.5f;
     d = 1.0f - s;
     objColor = obj->get_rgb();
     ambColor = (float)obj->get_ambient() * objColor;
-    Rd = (float)obj->get_diffuse() * objColor;
+    Rd = (float)obj->get_diffuse();
     rayDir = ray.get_direction();
     point = ray.get_pt() + (t * rayDir);
     normal = obj->get_normal(point);
     V = glm::normalize(-1.0f * rayDir);
-    power = 2.0f;
-    roughness = glm::sqrt(2.0f/(2.0f + power));
-    ndxOfRefrac = 1.0f;
+    roughness = (float)obj->get_roughness();
+    ndxOfRefrac = 1.1f;
     sumDiffSpec = glm::vec3(0, 0, 0);
 
     for (int i = 0; i < lightList.size(); i++) {
         lightColor = lightList[i]->get_rgb();
         lightDir = lightList[i]->get_loc() - point;
         H = glm::normalize(V + lightDir);
-        DBlinn = (1/(3.14f * glm::pow(roughness, 2.0f))) * glm::pow(glm::dot(H, normal), ( (2.0f/glm::pow(roughness, 2)) - 2) );
+        tan = (glm::pow(glm::dot(normal, H), 2) - 1) / glm::pow(glm::dot(normal, H), 2);
+        DBeck = (1/(3.14159f * glm::pow(roughness, 2.0f))) * glm::pow(2.71828f, tan) / glm::pow(glm::dot(normal, H), 4) ;
         G1 = (2.0f * glm::dot(H, normal) * glm::dot(normal, V)) / glm::dot(V, H);
         G2 = (2.0f * glm::dot(H, normal) * glm::dot(normal, lightDir)) / glm::dot(V, H) ;
         G = glm::min(1.0f, glm::min(G1, G2));
         F0 = glm::pow(ndxOfRefrac - 1.0f, 2.0f)/glm::pow(ndxOfRefrac + 1.0f, 2.0f);
         F = F0 + (1.0f - F0) * glm::pow(1.0f - glm::dot(V, H), 5.0f);
-        Rs = (DBlinn * G * F) / (4.0f * glm::dot(normal, V));
+        Rs = (DBeck * G * F) / (4.0f * glm::dot(normal, V));
         sumDiffSpec += lightColor * objColor * ((d * Rd) + (s * Rs));
     }
 

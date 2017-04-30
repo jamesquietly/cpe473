@@ -5,6 +5,8 @@ GeomObj::GeomObj() {
     transform = std::vector<glm::vec4>();
     ambient = 0;
     diffuse = 0;
+    specular = 0;
+    roughness = 0.5;
     type = "GeomObj";
 }
 
@@ -13,14 +15,18 @@ GeomObj::GeomObj(std::string t) {
     transform = std::vector<glm::vec4>();
     ambient = 0;
     diffuse = 0;
+    specular = 0;
+    roughness = 0.5;
     type = t;
 }
 
-GeomObj::GeomObj(glm::vec3 c, std::vector<glm::vec4> transf, double amb, double diff, std::string typeStr) {
+GeomObj::GeomObj(glm::vec3 c, std::vector<glm::vec4> transf, double amb, double diff, double spec, double rough, std::string typeStr) {
     rgb = glm::vec3(c.x, c.y, c.z);
     ambient = amb;
     diffuse = diff;
+    specular = spec;
     transform = transf;
+    roughness = rough;
     type = typeStr;
 }
 
@@ -48,6 +54,8 @@ void GeomObj::print_material() {
     std::cout << "- Material:\n";
     std::cout << "  - Ambient: " << ambient << std::endl;
     std::cout << "  - Diffuse: " << diffuse << std::endl;
+    std::cout << "  - Specular: " << specular << std::endl;
+    std::cout << "  - Roughness: " << roughness << std::endl;
 }
 
 void GeomObj::print_color() {
@@ -62,7 +70,7 @@ Sphere::Sphere() : GeomObj("Sphere") {
 
 }
 
-Sphere::Sphere(glm::vec3 cen, glm::vec3 c, double r, double amb, double diff, std::vector<glm::vec4> transf) : GeomObj(c, transf, amb, diff, "Sphere"){
+Sphere::Sphere(glm::vec3 cen, glm::vec3 c, double r, double amb, double diff, double spec, double rough, std::vector<glm::vec4> transf) : GeomObj(c, transf, amb, diff, spec, rough, "Sphere"){
     center = glm::vec3(cen.x, cen.y, cen.z);
     rad = r;
 }
@@ -117,7 +125,7 @@ Plane::Plane() : GeomObj("Plane") {
 
 }
 
-Plane::Plane(glm::vec3 n, glm::vec3 c, double dis, double amb, double diff, std::vector<glm::vec4> transf) : GeomObj(c, transf, amb, diff, "Plane") {
+Plane::Plane(glm::vec3 n, glm::vec3 c, double dis, double amb, double diff, double spec, double rough, std::vector<glm::vec4> transf) : GeomObj(c, transf, amb, diff, spec, rough, "Plane") {
     normal = glm::vec3(n.x, n.y, n.z);
     distance = dis;
 

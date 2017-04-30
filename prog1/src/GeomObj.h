@@ -13,18 +13,22 @@ class GeomObj{
 public:
     GeomObj();
     GeomObj(std::string t);
-    GeomObj(glm::vec3 c, std::vector<glm::vec4> transf, double amb, double diff, std::string typeStr);
+    GeomObj(glm::vec3 c, std::vector<glm::vec4> transf, double amb, double diff, double spec, double rough, std::string typeStr);
 
     glm::vec3 get_rgb() const {return rgb;}
     std::vector<glm::vec4> get_transform() const {return transform;}
     double get_ambient() const {return ambient;}
     double get_diffuse() const {return diffuse;}
+    double get_specular() const {return specular;}
+    double get_roughness() const {return roughness;}
     std::string get_type() const {return type;}
 
     void set_rgb(glm::vec3 v) {rgb = glm::vec3(v.x, v.y, v.z);}
     void set_transform(std::vector<glm::vec4> t) {transform = t;}
     void set_ambient(double a) {ambient = a;}
     void set_diffuse(double d) {diffuse = d;}
+    void set_specular(double s) {specular = s;}
+    void set_roughness(double r) {roughness = r;}
 
     void print_transform();
     void print_color();
@@ -37,7 +41,7 @@ public:
 protected:
     glm::vec3 rgb;
     std::vector<glm::vec4> transform;
-    double ambient, diffuse;
+    double ambient, diffuse, specular, roughness;
     std::string type;
 
 private:
@@ -48,7 +52,7 @@ private:
 class Sphere : public GeomObj {
 public:
     Sphere();
-    Sphere(glm::vec3 cen, glm::vec3 c, double r, double amb, double diff, std::vector<glm::vec4> transf);
+    Sphere(glm::vec3 cen, glm::vec3 c, double r, double amb, double diff, double spec, double rough, std::vector<glm::vec4> transf);
 
     glm::vec3 get_center() const {return center;}
     double get_rad() const {return rad;}
@@ -69,7 +73,7 @@ private:
 class Plane : public GeomObj {
 public:
     Plane();
-    Plane(glm::vec3 n, glm::vec3 c, double dis, double amb, double diff, std::vector<glm::vec4> transf);
+    Plane(glm::vec3 n, glm::vec3 c, double dis, double amb, double diff, double spec, double rough, std::vector<glm::vec4> transf);
     glm::vec3 get_normal() const {return normal;}
     double get_distance() const {return distance;}
 
