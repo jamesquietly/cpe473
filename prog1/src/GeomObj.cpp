@@ -7,6 +7,8 @@ GeomObj::GeomObj() {
     diffuse = 0;
     specular = 0;
     roughness = 0.5;
+    metallic = 0.5;
+    ior = 1.0;
     type = "GeomObj";
 }
 
@@ -17,16 +19,20 @@ GeomObj::GeomObj(std::string t) {
     diffuse = 0;
     specular = 0;
     roughness = 0.5;
+    metallic = 0.5;
+    ior = 1.0;
     type = t;
 }
 
-GeomObj::GeomObj(glm::vec3 c, std::vector<glm::vec4> transf, double amb, double diff, double spec, double rough, std::string typeStr) {
+GeomObj::GeomObj(glm::vec3 c, std::vector<glm::vec4> transf, double amb, double diff, double spec, double rough, double metal, double refrac, std::string typeStr) {
     rgb = glm::vec3(c.x, c.y, c.z);
     ambient = amb;
     diffuse = diff;
     specular = spec;
     transform = transf;
     roughness = rough;
+    metallic = metal;
+    ior = refrac;
     type = typeStr;
 }
 
@@ -56,6 +62,8 @@ void GeomObj::print_material() {
     std::cout << "  - Diffuse: " << diffuse << std::endl;
     std::cout << "  - Specular: " << specular << std::endl;
     std::cout << "  - Roughness: " << roughness << std::endl;
+    std::cout << "  - Metallic: " << metallic << std::endl;
+    std::cout << "  - IOR: " << ior << std::endl;
 }
 
 void GeomObj::print_color() {
@@ -70,7 +78,7 @@ Sphere::Sphere() : GeomObj("Sphere") {
 
 }
 
-Sphere::Sphere(glm::vec3 cen, glm::vec3 c, double r, double amb, double diff, double spec, double rough, std::vector<glm::vec4> transf) : GeomObj(c, transf, amb, diff, spec, rough, "Sphere"){
+Sphere::Sphere(glm::vec3 cen, glm::vec3 c, double r, double amb, double diff, double spec, double rough, double metal, double refrac, std::vector<glm::vec4> transf) : GeomObj(c, transf, amb, diff, spec, rough, metal, refrac, "Sphere"){
     center = glm::vec3(cen.x, cen.y, cen.z);
     rad = r;
 }
@@ -125,7 +133,7 @@ Plane::Plane() : GeomObj("Plane") {
 
 }
 
-Plane::Plane(glm::vec3 n, glm::vec3 c, double dis, double amb, double diff, double spec, double rough, std::vector<glm::vec4> transf) : GeomObj(c, transf, amb, diff, spec, rough, "Plane") {
+Plane::Plane(glm::vec3 n, glm::vec3 c, double dis, double amb, double diff, double spec, double rough, double metal, double refrac, std::vector<glm::vec4> transf) : GeomObj(c, transf, amb, diff, spec, rough, metal, refrac, "Plane") {
     normal = glm::vec3(n.x, n.y, n.z);
     distance = dis;
 

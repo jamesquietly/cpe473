@@ -13,7 +13,7 @@ class GeomObj{
 public:
     GeomObj();
     GeomObj(std::string t);
-    GeomObj(glm::vec3 c, std::vector<glm::vec4> transf, double amb, double diff, double spec, double rough, std::string typeStr);
+    GeomObj(glm::vec3 c, std::vector<glm::vec4> transf, double amb, double diff, double spec, double rough, double metal, double refrac, std::string typeStr);
 
     glm::vec3 get_rgb() const {return rgb;}
     std::vector<glm::vec4> get_transform() const {return transform;}
@@ -21,6 +21,8 @@ public:
     double get_diffuse() const {return diffuse;}
     double get_specular() const {return specular;}
     double get_roughness() const {return roughness;}
+    double get_metallic() const {return metallic;}
+    double get_ior() const {return ior;}
     std::string get_type() const {return type;}
 
     void set_rgb(glm::vec3 v) {rgb = glm::vec3(v.x, v.y, v.z);}
@@ -29,6 +31,8 @@ public:
     void set_diffuse(double d) {diffuse = d;}
     void set_specular(double s) {specular = s;}
     void set_roughness(double r) {roughness = r;}
+    void set_metallic(double m) {metallic = m;}
+    void set_ior(double i) {ior = i;}
 
     void print_transform();
     void print_color();
@@ -41,7 +45,7 @@ public:
 protected:
     glm::vec3 rgb;
     std::vector<glm::vec4> transform;
-    double ambient, diffuse, specular, roughness;
+    double ambient, diffuse, specular, roughness, metallic, ior;
     std::string type;
 
 private:
@@ -52,7 +56,7 @@ private:
 class Sphere : public GeomObj {
 public:
     Sphere();
-    Sphere(glm::vec3 cen, glm::vec3 c, double r, double amb, double diff, double spec, double rough, std::vector<glm::vec4> transf);
+    Sphere(glm::vec3 cen, glm::vec3 c, double r, double amb, double diff, double spec, double rough, double metal, double refrac, std::vector<glm::vec4> transf);
 
     glm::vec3 get_center() const {return center;}
     double get_rad() const {return rad;}
@@ -73,7 +77,7 @@ private:
 class Plane : public GeomObj {
 public:
     Plane();
-    Plane(glm::vec3 n, glm::vec3 c, double dis, double amb, double diff, double spec, double rough, std::vector<glm::vec4> transf);
+    Plane(glm::vec3 n, glm::vec3 c, double dis, double amb, double diff, double spec, double rough, double metal, double refrac, std::vector<glm::vec4> transf);
     glm::vec3 get_normal() const {return normal;}
     double get_distance() const {return distance;}
 

@@ -113,9 +113,7 @@ vector<Light*> parse_light(vector<string> lightList) {
     vector<double> vect;
     glm::vec3 loc, color;
     Light* lightObj;
-
     for (int i = 0; i < lightList.size(); i++) {
-
         vect = parse_vect(lightList[i], "light_source {");
         loc = glm::vec3(vect[0], vect[1], vect[2]);
         
@@ -140,7 +138,7 @@ Sphere* parse_sphere(string sphereList) {
     Sphere* sphere;
     int pos = 0;
     string delimiter = "\n", tempStr;
-    double rad, amb, diff, spec, rough;
+    double rad, amb, diff, spec, rough, metal, ior;
     size_t found;
 
 
@@ -168,6 +166,18 @@ Sphere* parse_sphere(string sphereList) {
         rough = parse_double(sphereList, "roughness");
     }
 
+    metal = 0.5;
+    found = sphereList.find("metallic");
+    if (found != string::npos) {
+        metal = parse_double(sphereList, "metallic");
+    }
+
+    ior = 1.0;
+    found = sphereList.find("ior");
+    if (found != string::npos) {
+        ior = parse_double(sphereList, "ior");
+    }
+
     while ((pos = sphereList.find(delimiter)) != string::npos ) {
         tempStr = sphereList.substr(0, pos);
         if (tempStr.find("scale") != string::npos) {
@@ -186,7 +196,7 @@ Sphere* parse_sphere(string sphereList) {
     }
 
 
-    sphere = new Sphere(cen, color, rad, amb, diff, spec, rough, transform);
+    sphere = new Sphere(cen, color, rad, amb, diff, spec, rough, metal, ior, transform);
 
     transform.clear();
     
@@ -202,7 +212,7 @@ Plane* parse_plane(string planeList) {
     vector<glm::vec4> transform;
     glm::vec3 color, norm;
     Plane* plane;
-    double dis, amb, diff, spec, rough;
+    double dis, amb, diff, spec, rough, metal, ior;
     int pos = 0;
     string tempStr, delimiter = "\n";
     size_t found;
@@ -232,6 +242,18 @@ Plane* parse_plane(string planeList) {
         rough = parse_double(planeList, "roughness");
     }
 
+    metal = 0.5;
+    found = planeList.find("metallic");
+    if (found != string::npos) {
+        metal = parse_double(planeList, "metallic");
+    }
+
+    ior = 1.0;
+    found = planeList.find("ior");
+    if (found != string::npos) {
+        ior = parse_double(planeList, "ior");
+    }
+
 
     while ((pos = planeList.find(delimiter)) != string::npos ) {
         tempStr = planeList.substr(0, pos);
@@ -250,7 +272,7 @@ Plane* parse_plane(string planeList) {
         planeList.erase(0, pos + delimiter.length());
     }
 
-    plane = new Plane(norm, color, dis, amb, diff, spec, rough, transform);
+    plane = new Plane(norm, color, dis, amb, diff, spec, rough, metal, ior, transform);
 
     transform.clear();
 
@@ -326,11 +348,15 @@ bool parse_objects(char *filename, Camera *cameraObj,
             }
 
             if (t == light_t && tempStr.compare("\n") != 0) {
-                lightVec.push_back(tempStr);
+                string lightStr(tempStr);
+                if (lightStr.compare("\n\n") != 0) {
+                    lightVec.push_back(lightStr);
+                }
                 tempStr = "";
             }
             else if (t == camera_t && line.compare("}") == 0) {
-                cameraVec.push_back(tempStr);
+                string camStr(tempStr);
+                cameraVec.push_back(camStr);
                 tempStr = "";
             }
             else if (t == sphere_t && line.compare("}") == 0) {
@@ -365,6 +391,7 @@ bool parse_objects(char *filename, Camera *cameraObj,
     else {
         result = false;
     }
+
 
     return result;
 
@@ -497,9 +524,9 @@ glm::vec3 blinn_phong(vector<Light*> lightList, GeomObj* obj, Ray ray, float t, 
 glm::vec3 cook_torrance(vector<Light*> lightList, GeomObj* obj, Ray ray, float t, vector<GeomObj*> objList) {
     glm::vec3 result, objColor, ambColor, diffColor, specColor, rayDir, point;
     glm::vec3 normal, lightColor, V, H, lightDir, sumDiffSpec;
-    float s, d, roughness, Rs, DBeck, G, F0, F, ndxOfRefrac, G1, G2, tan, Rd;
+    float s, d, roughness, Rs, DBeck, G, F0, F, ior, G1, G2, tan, Rd;
 
-    s = 0.5f;
+    s = (float)obj->get_metallic();
     d = 1.0f - s;
     objColor = obj->get_rgb();
     ambColor = (float)obj->get_ambient() * objColor;
@@ -509,7 +536,7 @@ glm::vec3 cook_torrance(vector<Light*> lightList, GeomObj* obj, Ray ray, float t
     normal = obj->get_normal(point);
     V = glm::normalize(-1.0f * rayDir);
     roughness = (float)obj->get_roughness();
-    ndxOfRefrac = 1.1f;
+    ior = (float)obj->get_ior();
     sumDiffSpec = glm::vec3(0, 0, 0);
 
     for (int i = 0; i < lightList.size(); i++) {
@@ -521,7 +548,7 @@ glm::vec3 cook_torrance(vector<Light*> lightList, GeomObj* obj, Ray ray, float t
         G1 = (2.0f * glm::dot(H, normal) * glm::dot(normal, V)) / glm::dot(V, H);
         G2 = (2.0f * glm::dot(H, normal) * glm::dot(normal, lightDir)) / glm::dot(V, H) ;
         G = glm::min(1.0f, glm::min(G1, G2));
-        F0 = glm::pow(ndxOfRefrac - 1.0f, 2.0f)/glm::pow(ndxOfRefrac + 1.0f, 2.0f);
+        F0 = glm::pow(ior - 1.0f, 2.0f)/glm::pow(ior + 1.0f, 2.0f);
         F = F0 + (1.0f - F0) * glm::pow(1.0f - glm::dot(V, H), 5.0f);
         Rs = (DBeck * G * F) / (4.0f * glm::dot(normal, V));
         sumDiffSpec += lightColor * objColor * ((d * Rd) + (s * Rs));
