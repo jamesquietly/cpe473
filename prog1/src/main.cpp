@@ -524,7 +524,7 @@ glm::vec3 blinn_phong(vector<Light*> lightList, GeomObj* obj, Ray ray, float t, 
 glm::vec3 cook_torrance(vector<Light*> lightList, GeomObj* obj, Ray ray, float t, vector<GeomObj*> objList) {
     glm::vec3 result, objColor, ambColor, diffColor, specColor, rayDir, point;
     glm::vec3 normal, lightColor, V, H, lightDir, sumDiffSpec;
-    float s, d, roughness, Rs, DBeck, G, F0, F, ior, G1, G2, tan, Rd;
+    float s, d, roughness, Rs, DBeck, G, F0, F, ior, G1, G2, tan, Rd, NdotH;
 
     s = (float)obj->get_metallic();
     d = 1.0f - s;
@@ -543,10 +543,17 @@ glm::vec3 cook_torrance(vector<Light*> lightList, GeomObj* obj, Ray ray, float t
         lightColor = lightList[i]->get_rgb();
         lightDir = lightList[i]->get_loc() - point;
         H = glm::normalize(V + lightDir);
-        tan = (glm::pow(glm::clamp(glm::dot(normal, H), 0.0f, 1.0f), 2.0f) - 1.0f) / glm::pow(glm::clamp(glm::dot(normal, H), 0.0f, 1.0f), 2.0f);
-        DBeck = (1.0f/(3.14159f * glm::pow(roughness, 2.0f))) * glm::pow(2.71828f, tan) / glm::pow(glm::clamp(glm::dot(normal, H), 0.0f, 1.0f), 4.0f) ;
-        G1 = (2.0f * glm::clamp(glm::dot(H, normal), 0.0f, 1.0f) * glm::clamp(glm::dot(normal, V), 0.0f, 1.0f)) / glm::clamp(glm::dot(V, H), 0.0f, 1.0f);
-        G2 = (2.0f * glm::clamp(glm::dot(H, normal), 0.0f, 1.0f) * glm::clamp(glm::dot(normal, lightDir), 0.0f, 1.0f)) / glm::clamp(glm::dot(V, H), 0.0f, 1.0f) ;
+        NdotH = glm::clamp(glm::dot(normal, H), 0.0f, 1.0f);
+        if (NdotH == 0) {
+            DBeck = 0.0f;
+        }
+        else {
+            tan = (glm::pow(NdotH, 2.0f) - 1.0f) / glm::pow(NdotH, 2.0f);
+            DBeck = (1.0f/(3.14159f * glm::pow(roughness, 2.0f))) * glm::pow(2.71828f, tan / glm::pow(roughness, 2.0f)) / glm::pow(NdotH, 4.0f) ;
+        }
+        
+        G1 = (2.0f * NdotH * glm::clamp(glm::dot(normal, V), 0.0f, 1.0f)) / glm::clamp(glm::dot(V, H), 0.0f, 1.0f);
+        G2 = (2.0f * NdotH * glm::clamp(glm::dot(normal, lightDir), 0.0f, 1.0f)) / glm::clamp(glm::dot(V, H), 0.0f, 1.0f) ;
         G = glm::min(1.0f, glm::min(G1, G2));
         F0 = glm::pow(ior - 1.0f, 2.0f)/glm::pow(ior + 1.0f, 2.0f);
         F = F0 + (1.0f - F0) * glm::pow(1.0f - glm::clamp(glm::dot(V, H), 0.1f, 1.0f), 5.0f);
