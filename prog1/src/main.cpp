@@ -550,15 +550,18 @@ glm::vec3 cook_torrance(vector<Light*> lightList, GeomObj* obj, Ray ray, float t
         else {
             tan = (glm::pow(NdotH, 2.0f) - 1.0f) / glm::pow(NdotH, 2.0f);
             DBeck = (1.0f/(3.14159f * glm::pow(roughness, 2.0f))) * glm::pow(2.71828f, tan / glm::pow(roughness, 2.0f)) / glm::pow(NdotH, 4.0f) ;
+            //DBeck = 1.0f;
         }
         
         G1 = (2.0f * NdotH * glm::clamp(glm::dot(normal, V), 0.0f, 1.0f)) / glm::clamp(glm::dot(V, H), 0.0f, 1.0f);
         G2 = (2.0f * NdotH * glm::clamp(glm::dot(normal, lightDir), 0.0f, 1.0f)) / glm::clamp(glm::dot(V, H), 0.0f, 1.0f) ;
         G = glm::min(1.0f, glm::min(G1, G2));
+        //G = 1.0f;
         F0 = glm::pow(ior - 1.0f, 2.0f)/glm::pow(ior + 1.0f, 2.0f);
         F = F0 + (1.0f - F0) * glm::pow(1.0f - glm::clamp(glm::dot(V, H), 0.1f, 1.0f), 5.0f);
+        //F = 1.0f;
         Rs = (DBeck * G * F) / (4.0f * glm::clamp(glm::dot(normal, V), 0.0f, 1.0f));
-        sumDiffSpec += lightColor * objColor * ((d * Rd) + (s * Rs));
+        sumDiffSpec += lightColor * objColor * ((d * glm::clamp(glm::dot(normal, lightDir), 0.0f, 1.0f) * Rd) + (s * Rs));
     }
 
     result = ambColor + sumDiffSpec;
