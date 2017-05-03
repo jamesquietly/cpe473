@@ -3,6 +3,10 @@
 
 #include <glm/gtc/type_ptr.hpp>
 #include <iostream>
+#include <vector>
+#include <cfloat>
+#include "Camera.h"
+
 
 class Ray {
 
@@ -22,5 +26,10 @@ private:
     glm::vec3 pt, direction;
 
 };
+
+
+
+Ray* create_cam_ray(Camera cam, int width, int height, int i, int j);
+int check_hit(std::vector<float> values);
 
 #endif
