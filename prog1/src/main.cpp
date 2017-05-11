@@ -86,6 +86,7 @@ int main(int argc, char **argv) {
     vector<GeomObj*> objList;
     vector<float> tValues;
     glm::vec3 color, objColor;
+    glm::vec4 colorVec4;
     Camera cam;
     Ray* ray;
     float t;
@@ -205,9 +206,9 @@ int main(int argc, char **argv) {
                 if (minNdx != -1) {
                     cout << "T = " << t << endl;
                     cout << "Object Type: " << objList[minNdx]->get_type() << endl;
-                    color = objList[minNdx]->get_rgb();
+                    colorVec4 = objList[minNdx]->get_rgb();
                     cout << "Color: ";
-                    cout << color.x << " " << color.y << " " << color.z << endl;
+                    cout << colorVec4.x << " " << colorVec4.y << " " << colorVec4.z << endl;
                 }
                 else {
                     cout << "No Hit" << endl;
@@ -242,7 +243,7 @@ int main(int argc, char **argv) {
                         cout << "BRDF: Blinn-Phong" << endl;
                         color = blinn_phong(lights, objList[minNdx], *ray, t, objList);
                     }
-                    //color = objList[minNdx]->get_rgb();
+
                     cout << "Color: (";
                     cout << std::round(glm::min(1.0f, color.x) * 255) << ", ";
                     cout << std::round(glm::min(1.0f, color.y) * 255) << ", "; 
