@@ -23,6 +23,50 @@
 
 using namespace std;
 
+glm::vec3 raytrace(glm::vec3 p0, glm::vec3 d, vector<GeomObj*> objList, vector<Light*> lightList, int depth) {
+    glm::vec3 color, local, reflectColor, reflectionVec, intersectionPt, objNormal;
+    glm::vec3 refractionVec, refractionColor;
+    glm::vec4 objColor;
+    color = glm::vec3(0, 0, 0);
+    int hitNdx;
+    float t, epsilon, DdotN, n1, n2, localContribut;
+    float reflectCoeff, refractCoeff, filterVal;
+    Ray ray = Ray(p0, d);
+    epsilon = 0.001f;
+
+    if (depth > 0) {
+
+        hitNdx = first_hit(ray, objList, &t);
+        if (hitNdx != -1) {
+            local = blinn_phong(lightList, objList[hitNdx], ray, t, objList);
+            intersectionPt = p0 + t * d;
+            objNormal = objList[hitNdx]->get_normal(intersectionPt);
+            reflectionVec = ray.calc_reflection(objNormal);
+            reflectColor = raytrace(intersectionPt + reflectionVec * epsilon, reflectionVec, objList, lightList, depth - 1);
+            reflectCoeff = (float)objList[hitNdx]->get_reflection();
+            DdotN = glm::dot(d, objNormal);
+            if (DdotN >= 0) {
+                n1 = 1.0f;
+                n2 = objList[hitNdx]->get_ior();
+            }
+            else {
+                n1 = objList[hitNdx]->get_ior();
+                n2 = 1.0f;
+            }
+            refractionVec = ray.calc_refraction(objNormal, n1, n2);
+            refractionColor = raytrace(intersectionPt + refractionVec * epsilon, refractionVec, objList, lightList, depth - 1);
+            refractCoeff = (float)objList[hitNdx]->get_refraction();
+            
+            objColor = objList[hitNdx]->get_rgb();
+            filterVal = objColor.w;
+            localContribut = (1.0f - filterVal) * (1.0f - reflectCoeff);
+
+            color += localContribut * local + reflectCoeff * reflectColor; // + refractCoeff * refractionColor;
+        }
+    }
+    return color;
+}
+
 /* print help message */
 void print_help() {
     cout << "Usage: raytrace render <input_filename> <width> <height> [-altbrdf]\n";
@@ -98,22 +142,18 @@ int main(int argc, char **argv) {
                 for (int y = 0; y < height; y++) {
                     for (int x = 0; x < width; x++) {
                         ray = create_cam_ray(cam, width, height, x, y);
-                        for (int z = 0; z < objList.size(); z++) {
-                            t = objList[z]->intersect(*ray);
-                            tValues.push_back(t);
-                        }
 
                         unsigned char red, green, blue;
 
                         // -1 means no hits
-                        minNdx = check_hit(tValues);
+                        minNdx = first_hit(*ray, objList, &t);
                         if (minNdx != -1) {
-                            //color = objList[minNdx]->get_rgb();
                             if(altArg.compare("-altbrdf") == 0) {
-                                color = cook_torrance(lights, objList[minNdx], *ray, tValues[minNdx], objList);
+                                color = cook_torrance(lights, objList[minNdx], *ray, t, objList);
                             }
                             else {
-                                color = blinn_phong(lights, objList[minNdx], *ray, tValues[minNdx], objList);
+                                //color = blinn_phong(lights, objList[minNdx], *ray, t, objList);
+                                color = raytrace(ray->get_pt(), ray->get_direction(), objList, lights, 6);
                             }
                             red = (unsigned char) std::round(glm::min(1.0f, color.x) * 255);
                             green = (unsigned char) std::round(glm::min(1.0f, color.y) * 255);
@@ -128,7 +168,6 @@ int main(int argc, char **argv) {
                         data[(width * numChannels) * (height - 1 - y) + numChannels * x + 0] = red;
                         data[(width * numChannels) * (height - 1 - y) + numChannels * x + 1] = green;
                         data[(width * numChannels) * (height - 1 - y) + numChannels * x + 2] = blue;
-                        tValues.clear();
                     }
                 }
 
@@ -156,19 +195,14 @@ int main(int argc, char **argv) {
 
                 ray = create_cam_ray(cam, width, height, inX, inY);
 
-                for (int i = 0; i < objList.size(); i ++) {
-                    t = objList[i]->intersect(*ray);
-                    tValues.push_back(t);
-                }
-
                 cout << "Pixel: [" << inX << ", " << inY << "] ";
                 ray->print();
                 cout << endl;
                 
                 // -1 means no hits
-                minNdx = check_hit(tValues);
+                minNdx = first_hit(*ray, objList, &t);
                 if (minNdx != -1) {
-                    cout << "T = " << tValues[minNdx] << endl;
+                    cout << "T = " << t << endl;
                     cout << "Object Type: " << objList[minNdx]->get_type() << endl;
                     color = objList[minNdx]->get_rgb();
                     cout << "Color: ";
@@ -190,27 +224,22 @@ int main(int argc, char **argv) {
 
                 ray = create_cam_ray(cam, width, height, inX, inY);
 
-                for (int i = 0; i < objList.size(); i ++) {
-                    t = objList[i]->intersect(*ray);
-                    tValues.push_back(t);
-                }
-
                 cout << "Pixel: [" << inX << ", " << inY << "] ";
                 ray->print();
                 cout << endl;
 
                 // -1 means no hits
-                minNdx = check_hit(tValues);
+                minNdx = first_hit(*ray, objList, &t);
                 if (minNdx != -1) {
-                    cout << "T = " << tValues[minNdx] << endl;
+                    cout << "T = " << t << endl;
                     cout << "Object Type: " << objList[minNdx]->get_type() << endl;
                     if (altArg.compare("-altbrdf") == 0) {
                         cout << "BRDF: Alternate" << endl;
-                        color = cook_torrance(lights, objList[minNdx], *ray, tValues[minNdx], objList);
+                        color = cook_torrance(lights, objList[minNdx], *ray, t, objList);
                     }
                     else {
                         cout << "BRDF: Blinn-Phong" << endl;
-                        color = blinn_phong(lights, objList[minNdx], *ray, tValues[minNdx], objList);
+                        color = blinn_phong(lights, objList[minNdx], *ray, t, objList);
                     }
                     //color = objList[minNdx]->get_rgb();
                     cout << "Color: (";

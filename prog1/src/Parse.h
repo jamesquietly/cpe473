@@ -16,7 +16,7 @@ Camera parse_camera(std::vector<std::string> cameraList);
 std::vector<Light*> parse_light(std::vector<std::string> lightList);
 Sphere* parse_sphere(std::string sphereList);
 Plane* parse_plane(std::string planeList);
-bool parse_objects(char *filename, Camera *cameraObj, 
-                   std::vector<Light*> *lights, std::vector<GeomObj*> *oList);
+Triangle* parse_triangle(std::string triangleList);
+bool parse_objects(char *filename, Camera *cameraObj, std::vector<Light*> *lights, std::vector<GeomObj*> *oList);
 
 #endif

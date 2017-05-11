@@ -16,6 +16,18 @@ void Ray::print() {
     std::cout << direction.x << " " << direction.y << " " << direction.z << "}";
 }
 
+glm::vec3 Ray::calc_reflection(glm::vec3 normal) {
+    return direction - 2.0f * glm::dot(direction, normal) * normal;
+}
+
+glm::vec3 Ray::calc_refraction(glm::vec3 normal, float n1, float n2) {
+    float indexFrac, DdotN, sqRoot;
+    indexFrac = n1/n2;
+    DdotN = glm::dot(direction, normal);
+    sqRoot = glm::sqrt(1.0f - glm::pow(indexFrac, 2.0f) * (1.0f - glm::pow(DdotN, 2.0f)));
+    return indexFrac * (direction - DdotN * normal) - normal * sqRoot;
+}
+
 /* create a single ray*/
 Ray* create_cam_ray(Camera cam, int width, int height, int i, int j) {
     float Us, Vs, Ws;
@@ -39,20 +51,4 @@ Ray* create_cam_ray(Camera cam, int width, int height, int i, int j) {
     ray = new Ray(p0, dir);
 
     return ray;
-}
-
-/* check list of t values to see if there are any hits */
-int check_hit(std::vector<float> values) {
-    float noHit = -1;
-    int minNdx = -1;
-    float minValue = FLT_MAX;
-
-    for (int i = 0; i < values.size(); i++) {
-        if (values[i] != noHit && values[i] < minValue) {
-            minValue = values[i];
-            minNdx = i;
-        }
-    }
-
-    return minNdx;
 }

@@ -113,16 +113,23 @@ Sphere* parse_sphere(string sphereList) {
     vector<Sphere*> spheres;
     vector<double> vect;
     vector<glm::vec4> transform;
-    glm::vec3 color, cen;
+    glm::vec4 color;
+    glm::vec3 cen;
     Sphere* sphere;
     int pos = 0;
     string delimiter = "\n", tempStr;
-    double rad, amb, diff, spec, rough, metal, ior;
+    double rad, amb, diff, spec, rough, metal, ior, reflect, refrac;
     size_t found;
 
-
-    vect = parse_vect(sphereList, "color rgb");
-    color = glm::vec3(vect[0], vect[1], vect[2]);
+    found = sphereList.find("color rgbf");
+    if (found != string::npos) {
+        vect = parse_vect(sphereList, "color rgbf");
+        color = glm::vec4(vect[0], vect[1], vect[2], vect[3]);
+    }
+    else {
+        vect = parse_vect(sphereList, "color rgb");
+        color = glm::vec4(vect[0], vect[1], vect[2], 0);
+    }
 
     vect = parse_vect(sphereList, "sphere {");
     cen = glm::vec3(vect[0], vect[1], vect[2]);
@@ -157,6 +164,19 @@ Sphere* parse_sphere(string sphereList) {
         ior = parse_double(sphereList, "ior");
     }
 
+    reflect = 0;
+    found = sphereList.find("reflection");
+    if (found != string::npos) {
+        reflect = parse_double(sphereList, "reflection");
+    }
+
+    refrac = 0;
+    found = sphereList.find("refraction");
+    if (found != string::npos) {
+        refrac = parse_double(sphereList, "refraction");
+    }
+
+
     while ((pos = sphereList.find(delimiter)) != string::npos ) {
         tempStr = sphereList.substr(0, pos);
         if (tempStr.find("scale") != string::npos) {
@@ -175,7 +195,7 @@ Sphere* parse_sphere(string sphereList) {
     }
 
 
-    sphere = new Sphere(cen, color, rad, amb, diff, spec, rough, metal, ior, transform);
+    sphere = new Sphere(cen, color, rad, amb, diff, spec, rough, metal, ior, reflect, refrac, transform);
 
     transform.clear();
     
@@ -189,9 +209,10 @@ Plane* parse_plane(string planeList) {
     vector<Plane*> planes;
     vector<double> vect;
     vector<glm::vec4> transform;
-    glm::vec3 color, norm;
+    glm::vec4 color;
+    glm::vec3 norm;
     Plane* plane;
-    double dis, amb, diff, spec, rough, metal, ior;
+    double dis, amb, diff, spec, rough, metal, ior, reflect, refrac;
     int pos = 0;
     string tempStr, delimiter = "\n";
     size_t found;
@@ -200,8 +221,15 @@ Plane* parse_plane(string planeList) {
     vect = parse_vect(planeList, "plane {");
     norm = glm::vec3(vect[0], vect[1], vect[2]);
     
-    vect = parse_vect(planeList, "color rgb");
-    color = glm::vec3(vect[0], vect[1], vect[2]);
+    found = planeList.find("color rgbf");
+    if (found != string::npos) {
+        vect = parse_vect(planeList, "color rgbf");
+        color = glm::vec4(vect[0], vect[1], vect[2], vect[3]);
+    }
+    else {
+        vect = parse_vect(planeList, "color rgb");
+        color = glm::vec4(vect[0], vect[1], vect[2], 0);
+    }
 
     dis = parse_double(planeList, ">,");
 
@@ -233,6 +261,18 @@ Plane* parse_plane(string planeList) {
         ior = parse_double(planeList, "ior");
     }
 
+    reflect = 0;
+    found = planeList.find("reflection");
+    if (found != string::npos) {
+        reflect = parse_double(planeList, "reflection");
+    }
+
+    refrac = 0;
+    found = planeList.find("refraction");
+    if (found != string::npos) {
+        refrac = parse_double(planeList, "refraction");
+    }
+
 
     while ((pos = planeList.find(delimiter)) != string::npos ) {
         tempStr = planeList.substr(0, pos);
@@ -251,19 +291,114 @@ Plane* parse_plane(string planeList) {
         planeList.erase(0, pos + delimiter.length());
     }
 
-    plane = new Plane(norm, color, dis, amb, diff, spec, rough, metal, ior, transform);
+    plane = new Plane(norm, color, dis, amb, diff, spec, rough, metal, ior, reflect, refrac, transform);
 
     transform.clear();
 
     return plane;
 }
 
+Triangle* parse_triangle(string triangleList) {
+    Triangle* triangle;
+    vector<double> vect;
+    glm::vec4 color;
+    glm::vec3 pt1, pt2, pt3;
+    vector<glm::vec4> transform;
+    int pos;
+    string subStr, tempStr, delimiter = "\n";
+    double amb, diff, spec, rough, metal, ior, reflect, refrac;
+    size_t found;
+
+    vect = parse_vect(triangleList, "triangle {");
+    pt1 = glm::vec3(vect[0], vect[1], vect[2]);
+
+    vect = parse_vect(triangleList, ">,");
+    pt2 = glm::vec3(vect[0], vect[1], vect[2]);
+
+    pos = triangleList.find(">,");
+    subStr = triangleList.substr(pos + 2, string::npos);
+    vect = parse_vect(subStr, ">,");
+    pt3 = glm::vec3(vect[0], vect[1], vect[2]);
+
+    found = triangleList.find("color rgbf");
+    if (found != string::npos) {
+        vect = parse_vect(triangleList, "color rgbf");
+        color = glm::vec4(vect[0], vect[1], vect[2], vect[3]);
+    }
+    else {
+        vect = parse_vect(triangleList, "color rgb");
+        color = glm::vec4(vect[0], vect[1], vect[2], 0);
+    }
+
+    amb = parse_double(triangleList, "ambient");
+
+    diff = parse_double(triangleList, "diffuse");
+
+    spec = 0;
+    found = triangleList.find("specular");
+    if (found != string::npos) {
+        spec = parse_double(triangleList, "specular");
+    }
+
+    rough = 0.5;
+    found = triangleList.find("roughness");
+    if (found != string::npos) {
+        rough = parse_double(triangleList, "roughness");
+    }
+
+    metal = 0.5;
+    found = triangleList.find("metallic");
+    if (found != string::npos) {
+        metal = parse_double(triangleList, "metallic");
+    }
+
+    ior = 1.0;
+    found = triangleList.find("ior");
+    if (found != string::npos) {
+        ior = parse_double(triangleList, "ior");
+    }
+
+    reflect = 0;
+    found = triangleList.find("reflection");
+    if (found != string::npos) {
+        reflect = parse_double(triangleList, "reflection");
+    }
+
+    refrac = 0;
+    found = triangleList.find("refraction");
+    if (found != string::npos) {
+        refrac = parse_double(triangleList, "refraction");
+    }
+
+    pos = 0;
+    while ((pos = triangleList.find(delimiter)) != string::npos ) {
+        tempStr = triangleList.substr(0, pos);
+        if (tempStr.find("scale") != string::npos) {
+            vect = parse_vect(tempStr, "scale");
+            transform.push_back(glm::vec4(vect[0], vect[1], vect[2], scale_t));
+        }
+        else if (tempStr.find("translate") != string::npos) {
+            vect = parse_vect(tempStr, "translate");
+            transform.push_back(glm::vec4(vect[0], vect[1], vect[2], translate_t));
+        }
+        else if (tempStr.find("rotate") != string::npos) {
+            vect = parse_vect(tempStr, "rotate");
+            transform.push_back(glm::vec4(vect[0], vect[1], vect[2], rotate_t));
+        }
+        triangleList.erase(0, pos + delimiter.length());
+    }
+
+    triangle = new Triangle(pt1, pt2, pt3, color, amb, diff, spec, rough, metal, ior, reflect, refrac, transform);
+
+    return triangle;
+
+}
+
 /* parse pov files
    returns true if we can find file
    else returns false
 */
-bool parse_objects(char *filename, Camera *cameraObj, 
-                   vector<Light*> *lights, vector<GeomObj*> *oList) 
+bool parse_objects(char *filename, Camera *cameraObj, vector<Light*> *lights, vector<GeomObj*> *oList) 
 {
     fstream f;
     size_t findStr;
@@ -274,6 +409,7 @@ bool parse_objects(char *filename, Camera *cameraObj,
     vector<Plane*> planeList;
     Sphere* sObj;
     Plane* planeObj;
+    Triangle* triObj;
     bool result;
 
     f.open(filename, fstream::in);
@@ -305,7 +441,7 @@ bool parse_objects(char *filename, Camera *cameraObj,
                 t = plane_t;
             }
 
-            findStr = line.find("trianlge");
+            findStr = line.find("triangle");
             if (findStr != string::npos) {
                 t = triangle_t;
             }
@@ -339,17 +475,21 @@ bool parse_objects(char *filename, Camera *cameraObj,
                 tempStr = "";
             }
             else if (t == sphere_t && line.compare("}") == 0) {
-                //sphereVec.push_back(tempStr);
                 string spStr(tempStr);
                 sObj = parse_sphere(spStr);
                 oList->push_back(sObj);
                 tempStr = "";
             }
             else if (t == plane_t && line.compare("}") == 0) {
-                //planeVec.push_back(tempStr);
                 string planeStr(tempStr);
                 planeObj = parse_plane(planeStr);
                 oList->push_back(planeObj);
+                tempStr = "";
+            }
+            else if (t == triangle_t && line.compare("}") == 0) {
+                string triStr(tempStr);
+                triObj = parse_triangle(triStr);
+                oList->push_back(triObj);
                 tempStr = "";
             }
             else if (t == box_t && line.compare("}") == 0) {

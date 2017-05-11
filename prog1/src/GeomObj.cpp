@@ -1,7 +1,7 @@
 #include "GeomObj.h"
 
 GeomObj::GeomObj() {
-    rgb = glm::vec3(0, 0, 0);
+    rgb = glm::vec4(0, 0, 0, 0);
     transform = std::vector<glm::vec4>();
     ambient = 0;
     diffuse = 0;
@@ -9,11 +9,13 @@ GeomObj::GeomObj() {
     roughness = 0.5;
     metallic = 0.5;
     ior = 1.0;
+    reflection = 0;
+    refraction = 0;
     type = "GeomObj";
 }
 
 GeomObj::GeomObj(std::string t) {
-    rgb = glm::vec3(0, 0, 0);
+    rgb = glm::vec4(0, 0, 0, 0);
     transform = std::vector<glm::vec4>();
     ambient = 0;
     diffuse = 0;
@@ -21,18 +23,22 @@ GeomObj::GeomObj(std::string t) {
     roughness = 0.5;
     metallic = 0.5;
     ior = 1.0;
+    reflection = 0;
+    refraction = 0;
     type = t;
 }
 
-GeomObj::GeomObj(glm::vec3 c, std::vector<glm::vec4> transf, double amb, double diff, double spec, double rough, double metal, double refrac, std::string typeStr) {
-    rgb = glm::vec3(c.x, c.y, c.z);
+GeomObj::GeomObj(glm::vec4 c, std::vector<glm::vec4> transf, double amb, double diff, double spec, double rough, double metal, double ndx, double reflect, double refrac, std::string typeStr) {
+    rgb = glm::vec4(c.x, c.y, c.z, c.w);
     ambient = amb;
     diffuse = diff;
     specular = spec;
     transform = transf;
     roughness = rough;
     metallic = metal;
-    ior = refrac;
+    ior = ndx;
+    reflection = reflect;
+    refraction = refrac;
     type = typeStr;
 }
 
@@ -64,11 +70,13 @@ void GeomObj::print_material() {
     std::cout << "  - Roughness: " << roughness << std::endl;
     std::cout << "  - Metallic: " << metallic << std::endl;
     std::cout << "  - IOR: " << ior << std::endl;
+    std::cout << "  - Reflection: " << reflection << std::endl;
+    std::cout << "  - Refraction: " << refraction << std::endl;
 }
 
 void GeomObj::print_color() {
     std::cout << "- Color: {";
-    std::cout << rgb.x << " " << rgb.y << " " << rgb.z;
+    std::cout << rgb.x << " " << rgb.y << " " << rgb.z << " " << rgb.w;
     std::cout << "}\n";
 }
 
@@ -78,7 +86,7 @@ Sphere::Sphere() : GeomObj("Sphere") {
 
 }
 
-Sphere::Sphere(glm::vec3 cen, glm::vec3 c, double r, double amb, double diff, double spec, double rough, double metal, double refrac, std::vector<glm::vec4> transf) : GeomObj(c, transf, amb, diff, spec, rough, metal, refrac, "Sphere"){
+Sphere::Sphere(glm::vec3 cen, glm::vec4 c, double r, double amb, double diff, double spec, double rough, double metal, double ndx, double reflect, double refrac, std::vector<glm::vec4> transf) : GeomObj(c, transf, amb, diff, spec, rough, metal, ndx, reflect, refrac, "Sphere"){
     center = glm::vec3(cen.x, cen.y, cen.z);
     rad = r;
 }
@@ -133,7 +141,7 @@ Plane::Plane() : GeomObj("Plane") {
 
 }
 
-Plane::Plane(glm::vec3 n, glm::vec3 c, double dis, double amb, double diff, double spec, double rough, double metal, double refrac, std::vector<glm::vec4> transf) : GeomObj(c, transf, amb, diff, spec, rough, metal, refrac, "Plane") {
+Plane::Plane(glm::vec3 n, glm::vec4 c, double dis, double amb, double diff, double spec, double rough, double metal, double ndx, double reflect, double refrac, std::vector<glm::vec4> transf) : GeomObj(c, transf, amb, diff, spec, rough, metal, ndx, reflect, refrac, "Plane") {
     normal = glm::vec3(n.x, n.y, n.z);
     distance = dis;
 
@@ -169,4 +177,138 @@ float Plane::intersect(Ray r) {
 
     return t;
 
+}
+
+Triangle::Triangle() : GeomObj("Triangle") {
+    pt1 = glm::vec3(0, 0, 0);
+    pt2 = glm::vec3(0, 0, 0);
+    pt3 = glm::vec3(0, 0, 0);
+}
+
+Triangle::Triangle(glm::vec3 p1, glm::vec3 p2, glm::vec3 p3, glm::vec4 c, double amb, double diff, double spec, double rough, double metal, double ndx, double reflect, double refrac, std::vector<glm::vec4> transf) : GeomObj(c, transf, amb, diff, spec, rough, metal, ndx, reflect, refrac, "Triangle") {
+    pt1 = glm::vec3(p1.x, p1.y, p1.z);
+    pt2 = glm::vec3(p2.x, p2.y, p2.z);
+    pt3 = glm::vec3(p3.x, p3.y, p3.z);
+}
+
+void Triangle::print() {
+    std::cout << "- Type: " << type << std::endl;
+    std::cout << "- Point 1: <" << pt1.x << " " << pt1.y << " " << pt1.z << ">\n";
+    std::cout << "- Point 2: <" << pt2.x << " " << pt2.y << " " << pt2.z << ">\n";
+    std::cout << "- Point 3: <" << pt3.x << " " << pt3.y << " " << pt3.z << ">\n";
+    GeomObj::print_color();
+    GeomObj::print_material();
+}
+
+float Triangle::intersect(Ray r) {
+    float t, detA, gamma, beta;
+    glm::vec3 vertA, vertB, vertC, p0, rayDir;
+    std::vector<float> A, tNumerator, betaNumerator, gamNumerator;
+
+    vertA = pt1;
+    vertB = pt2;
+    vertC = pt3;
+    p0 = r.get_pt();
+    rayDir = r.get_direction();
+
+    A = {vertA.x - vertB.x, vertA.x - vertC.x, rayDir.x, 
+         vertA.y - vertB.y, vertA.y - vertC.y, rayDir.y,
+         vertA.z - vertB.z, vertA.z - vertC.z, rayDir.z};
+
+    tNumerator = {vertA.x - vertB.x, vertA.x - vertC.x, vertA.x - p0.x,
+                  vertA.y - vertB.y, vertA.y - vertC.y, vertA.y - p0.y,
+                  vertA.z - vertB.z, vertA.z - vertC.z, vertA.z - p0.z};
+
+    gamNumerator = {vertA.x - vertB.x, vertA.x - p0.x, rayDir.x,
+                    vertA.y - vertB.y, vertA.y - p0.y, rayDir.y,
+                    vertA.z - vertB.z, vertA.z - p0.z, rayDir.z};
+
+    betaNumerator = {vertA.x - p0.x, vertA.x - vertC.x, rayDir.x,
+                     vertA.y - p0.y, vertA.y - vertC.y, rayDir.y,
+                     vertA.z - p0.z, vertA.z - vertC.z, rayDir.z};
+
+    detA = determinant(A);
+
+    t = determinant(tNumerator)/detA;
+    if (t < 0) {
+        return -1;
+    }
+    
+    gamma = determinant(gamNumerator)/detA;
+    if (gamma < 0 || gamma > 1) {
+        return -1;
+    }
+
+    beta = determinant(betaNumerator)/detA;
+    if (beta < 0 || beta > 1 - gamma) {
+        return -1;
+    }
+
+
+    return t;
+}
+
+glm::vec3 Triangle::get_normal(glm::vec3 pt) {
+    glm::vec3 AB, AC, normal;
+    AB = pt2 - pt1;
+    AC = pt3 - pt1;
+
+    normal = glm::normalize(glm::cross(AB, AC));
+
+    return normal;
+}
+
+float determinant(std::vector<float> vect) {
+    float a, b, c, d, e, f, g, h, i;
+
+    if (vect.size() < 9) {
+        std::cout << "not 3x3 matrix" << std::endl;
+        return -1;
+    }
+
+    a = vect[0];
+    b = vect[1];
+    c = vect[2];
+    d = vect[3];
+    e = vect[4];
+    f = vect[5];
+    g = vect[6];
+    h = vect[7];
+    i = vect[8];
+
+    return a*e*i - a*f*h + b*f*g - b*d*i + c*d*h - c*e*g;
+}
+
+/* check list of t values to see if there are any hits */
+int check_hit(std::vector<float> values) {
+    float noHit = -1;
+    int minNdx = -1;
+    float minValue = FLT_MAX;
+
+    for (int i = 0; i < values.size(); i++) {
+        if (values[i] != noHit && values[i] < minValue) {
+            minValue = values[i];
+            minNdx = i;
+        }
+    }
+
+    return minNdx;
+}
+
+int first_hit(Ray ray, std::vector<GeomObj*> objList, float* newT) {
+    float t;
+    int hitNdx;
+    std::vector<float> tValues;
+
+    for (int i = 0; i < objList.size(); i++) {
+        t = objList[i]->intersect(ray);
+        tValues.push_back(t);
+    }
+
+    hitNdx = check_hit(tValues);
+    if (hitNdx != -1) {
+        *newT = tValues[hitNdx];
+    }
+
+    return hitNdx;
 }

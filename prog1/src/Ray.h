@@ -21,6 +21,8 @@ public:
     void set_direction(glm::vec3 d) {direction = glm::vec3(d.x, d.y, d.z);}
 
     void print();
+    glm::vec3 calc_reflection(glm::vec3 normal);
+    glm::vec3 calc_refraction(glm::vec3 normal, float n1, float n2);
 
 private:
     glm::vec3 pt, direction;
@@ -30,6 +32,5 @@ private:
 
 
 Ray* create_cam_ray(Camera cam, int width, int height, int i, int j);
-int check_hit(std::vector<float> values);
 
 #endif
