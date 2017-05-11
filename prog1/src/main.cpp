@@ -52,6 +52,7 @@ glm::vec3 raytrace(glm::vec3 p0, glm::vec3 d, vector<GeomObj*> objList, vector<L
             else {
                 n1 = objList[hitNdx]->get_ior();
                 n2 = 1.0f;
+                objNormal = -1.0f * objNormal;
             }
             refractionVec = ray.calc_refraction(objNormal, n1, n2);
             refractionColor = raytrace(intersectionPt + refractionVec * epsilon, refractionVec, objList, lightList, depth - 1);
