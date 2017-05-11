@@ -61,7 +61,7 @@ glm::vec3 raytrace(glm::vec3 p0, glm::vec3 d, vector<GeomObj*> objList, vector<L
             filterVal = objColor.w;
             localContribut = (1.0f - filterVal) * (1.0f - reflectCoeff);
 
-            color += localContribut * local + reflectCoeff * reflectColor; // + refractCoeff * refractionColor;
+            color += localContribut * local + reflectCoeff * reflectColor + refractCoeff * refractionColor;
         }
     }
     return color;
