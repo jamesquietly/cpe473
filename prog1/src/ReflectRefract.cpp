@@ -64,7 +64,10 @@ glm::vec3 raytrace(glm::vec3 p0, glm::vec3 d, std::vector<GeomObj*> objList, std
 
             if (printMode) {
                 std::cout << "Ray: {" << p0.x << " " << p0.y << " " << p0.z << "} -> {";
-                std::cout << d.x << " " << d.y << d.z << "}\n";
+                std::cout << d.x << " " << d.y << " " << d.z << "}\n";
+                std::cout << "Hit Object ID (" << hitNdx << " - " << objList[hitNdx]->get_type() << ") at T = ";
+                std::cout << t << ", Intersection = {" << intersectionPt.x << " " << intersectionPt.y << " " << intersectionPt.z << "}\n";
+                std::cout << "Normal {" << objNormal.x << " " << objNormal.y << " " << objNormal.z << "}\n";
             }
 
             local = blinn_phong(lightList, objList[hitNdx], ray, t, objList, printMode);

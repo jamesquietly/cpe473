@@ -31,6 +31,7 @@ void print_help() {
     cout << "       raytrace pixelray <input_filename> <width> <height> <x> <y>\n";
     cout << "       raytrace firsthit <input_filename> <width> <height> <x> <y>\n";
     cout << "       raytrace pixelcolor <input_filename> <width> <height> <x> <y> [-altbrdf]\n";
+    cout << "       raytrace pixeltrace <input_filename> <width> <height> <x> <y> [-altbrdf]\n";
 }
 
 
