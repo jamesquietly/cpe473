@@ -110,8 +110,7 @@ int main(int argc, char **argv) {
                                 color = cook_torrance(lights, objList[minNdx], *ray, t, objList);
                             }
                             else {
-                                //color = blinn_phong(lights, objList[minNdx], *ray, t, objList);
-                                color = raytrace(ray->get_pt(), ray->get_direction(), objList, lights, 6);
+                                color = raytrace(ray->get_pt(), ray->get_direction(), objList, lights, 6, false);
                             }
                             red = (unsigned char) std::round(glm::min(1.0f, color.x) * 255);
                             green = (unsigned char) std::round(glm::min(1.0f, color.y) * 255);
@@ -197,7 +196,7 @@ int main(int argc, char **argv) {
                     }
                     else {
                         cout << "BRDF: Blinn-Phong" << endl;
-                        color = blinn_phong(lights, objList[minNdx], *ray, t, objList);
+                        color = blinn_phong(lights, objList[minNdx], *ray, t, objList, false);
                     }
 
                     cout << "Color: (";
@@ -208,6 +207,20 @@ int main(int argc, char **argv) {
                 else {
                     cout << "No Hit" << endl;
                 }
+
+            }
+            else if (mode.compare("pixeltrace") == 0) {
+                width = atoi(argv[3]);
+                height = atoi(argv[4]);
+                inX = atoi(argv[5]);
+                inY = atoi(argv[6]);
+
+                if (argc > 7) {
+                    altArg = string(argv[7]);
+                }
+
+                ray = create_cam_ray(cam, width, height, inX, inY);
+                raytrace(ray->get_pt(), ray->get_direction(), objList, lights, 6, true);
 
             }
         }

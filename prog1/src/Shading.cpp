@@ -1,6 +1,6 @@
 #include "Shading.h"
 
-glm::vec3 blinn_phong(std::vector<Light*> lightList, GeomObj* obj, Ray ray, float t, std::vector<GeomObj*> objList) {
+glm::vec3 blinn_phong(std::vector<Light*> lightList, GeomObj* obj, Ray ray, float t, std::vector<GeomObj*> objList, bool printMode) {
     glm::vec3 result, lightColor, ambColor, specColor, diffColor; 
     glm::vec3 lightDir, rayDir, V, H, point, sumDiff, sumSpec, normal, objColor;
     glm::vec3 epsPoint;
@@ -66,6 +66,11 @@ glm::vec3 blinn_phong(std::vector<Light*> lightList, GeomObj* obj, Ray ray, floa
     }
     
     result = ambColor + sumDiff + sumSpec;
+    if (printMode) {
+        std::cout << "Ambient: " << ambColor.x << ", " << ambColor.y << ", " << ambColor.z << std::endl;
+        std::cout << "Diffuse: " << sumDiff.x << ", " << sumDiff.y << ", " << sumDiff.z << std::endl;
+        std::cout << "Specular: " << sumSpec.x << ", " << sumSpec.y << ", " << sumSpec.z << "\n\n";
+    }
     return result;
 }
 

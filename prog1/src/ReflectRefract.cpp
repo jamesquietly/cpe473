@@ -18,7 +18,7 @@ glm::vec3 beers_law(glm::vec4 objColor, float distance) {
     return attenuation;
 }
 
-glm::vec3 raytrace(glm::vec3 p0, glm::vec3 d, std::vector<GeomObj*> objList, std::vector<Light*> lightList, int depth) {
+glm::vec3 raytrace(glm::vec3 p0, glm::vec3 d, std::vector<GeomObj*> objList, std::vector<Light*> lightList, int depth, bool printMode) {
     glm::vec3 color, local, reflectColor, reflectionVec, intersectionPt, objNormal;
     glm::vec3 refractionVec, refractionColor, attenuation;
     glm::vec4 objColor;
@@ -33,11 +33,10 @@ glm::vec3 raytrace(glm::vec3 p0, glm::vec3 d, std::vector<GeomObj*> objList, std
 
         hitNdx = first_hit(ray, objList, &t);
         if (hitNdx != -1) {
-            local = blinn_phong(lightList, objList[hitNdx], ray, t, objList);
             intersectionPt = p0 + t * d;
             objNormal = objList[hitNdx]->get_normal(intersectionPt);
             reflectionVec = ray.calc_reflection(objNormal);
-            reflectColor = raytrace(intersectionPt + reflectionVec * epsilon, reflectionVec, objList, lightList, depth - 1);
+            reflectColor = raytrace(intersectionPt + reflectionVec * epsilon, reflectionVec, objList, lightList, depth - 1, printMode);
             reflectCoeff = (float)objList[hitNdx]->get_reflection();
             DdotN = glm::dot(d, objNormal);
             ior = (float)objList[hitNdx]->get_ior();
@@ -51,7 +50,7 @@ glm::vec3 raytrace(glm::vec3 p0, glm::vec3 d, std::vector<GeomObj*> objList, std
                 objNormal = -1.0f * objNormal;
             }
             refractionVec = ray.calc_refraction(objNormal, n1, n2);
-            refractionColor = raytrace(intersectionPt + refractionVec * epsilon, refractionVec, objList, lightList, depth - 1);
+            refractionColor = raytrace(intersectionPt + refractionVec * epsilon, refractionVec, objList, lightList, depth - 1, printMode);
             refractCoeff = (float)objList[hitNdx]->get_refraction();
             
             objColor = objList[hitNdx]->get_rgb();
@@ -63,7 +62,15 @@ glm::vec3 raytrace(glm::vec3 p0, glm::vec3 d, std::vector<GeomObj*> objList, std
             distance = glm::distance(p0, intersectionPt);
             attenuation = beers_law(objColor, distance);
 
-            color += (localContribut * local + reflectContribut * reflectColor + refractContribut * refractionColor) * attenuation;
+            if (printMode) {
+                std::cout << "Ray: {" << p0.x << " " << p0.y << " " << p0.z << "} -> {";
+                std::cout << d.x << " " << d.y << d.z << "}\n";
+            }
+
+            local = blinn_phong(lightList, objList[hitNdx], ray, t, objList, printMode);
+
+
+            color += (localContribut * local + reflectContribut * reflectColor + refractContribut * refractionColor);
         }
     }
     return color;
