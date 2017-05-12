@@ -45,7 +45,7 @@ glm::vec3 raytrace(glm::vec3 p0, glm::vec3 d, vector<GeomObj*> objList, vector<L
             reflectColor = raytrace(intersectionPt + reflectionVec * epsilon, reflectionVec, objList, lightList, depth - 1);
             reflectCoeff = (float)objList[hitNdx]->get_reflection();
             DdotN = glm::dot(d, objNormal);
-            if (DdotN >= 0) {
+            if (DdotN < 0) {
                 n1 = 1.0f;
                 n2 = objList[hitNdx]->get_ior();
             }

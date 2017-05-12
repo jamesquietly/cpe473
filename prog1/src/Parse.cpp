@@ -474,29 +474,29 @@ bool parse_objects(char *filename, Camera *cameraObj, vector<Light*> *lights, ve
                 cameraVec.push_back(camStr);
                 tempStr = "";
             }
-            else if (t == sphere_t && line.compare("}") == 0) {
+            else if (t == sphere_t && (line.compare("}") == 0 || line.find("}}") != string::npos)) {
                 string spStr(tempStr);
                 sObj = parse_sphere(spStr);
                 oList->push_back(sObj);
                 tempStr = "";
             }
-            else if (t == plane_t && line.compare("}") == 0) {
+            else if (t == plane_t && (line.compare("}") == 0 || line.find("}}") != string::npos)) {
                 string planeStr(tempStr);
                 planeObj = parse_plane(planeStr);
                 oList->push_back(planeObj);
                 tempStr = "";
             }
-            else if (t == triangle_t && line.compare("}") == 0) {
+            else if (t == triangle_t && (line.compare("}") == 0 || line.find("}}") != string::npos)) {
                 string triStr(tempStr);
                 triObj = parse_triangle(triStr);
                 oList->push_back(triObj);
                 tempStr = "";
             }
-            else if (t == box_t && line.compare("}") == 0) {
+            else if (t == box_t && (line.compare("}") == 0 || line.find("}}") != string::npos)) {
                 boxVec.push_back(tempStr);
                 tempStr = "";
             }
-            else if (t == cone_t && line.compare("}") == 0) {
+            else if (t == cone_t && (line.compare("}") == 0 || line.find("}}") != string::npos)) {
                 coneVec.push_back(tempStr);
                 tempStr = "";
             }
