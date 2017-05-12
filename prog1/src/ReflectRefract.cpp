@@ -9,13 +9,12 @@ float schlicks_aprrox(float ior, glm::vec3 normal, glm::vec3 view) {
 }
 
 glm::vec3 beers_law(glm::vec4 objColor, float distance) {
-    float alpha, euler;
+    float alpha;
     glm::vec3 color, absorbance, attenuation;
     color = glm::vec3(objColor.x, objColor.y, objColor.z);
     alpha = 0.15f;
-    euler = 2.71828f;
-    absorbance = color * alpha * -1.0f * distance;
-    attenuation = glm::vec3(glm::pow(euler, absorbance.x), glm::pow(euler, absorbance.y), glm::pow(euler, absorbance.z));
+    absorbance = (glm::vec3(1.0f, 1.0f, 1.0f) - color) * alpha * -1.0f * distance;
+    attenuation = glm::vec3(glm::exp(absorbance.x), glm::exp(absorbance.y), glm::exp(absorbance.z));
     return attenuation;
 }
 
@@ -64,7 +63,7 @@ glm::vec3 raytrace(glm::vec3 p0, glm::vec3 d, std::vector<GeomObj*> objList, std
             distance = glm::distance(p0, intersectionPt);
             attenuation = beers_law(objColor, distance);
 
-            color += localContribut * local + reflectContribut * reflectColor + refractContribut * refractionColor;
+            color += (localContribut * local + reflectContribut * reflectColor + refractContribut * refractionColor) * attenuation;
         }
     }
     return color;
