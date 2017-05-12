@@ -1,9 +1,10 @@
-#include "Shading.h"
+ƒ#include "Shading.h"
 
 glm::vec3 blinn_phong(std::vector<Light*> lightList, GeomObj* obj, Ray ray, float t, std::vector<GeomObj*> objList) {
     glm::vec3 result, lightColor, ambColor, specColor, diffColor; 
     glm::vec3 lightDir, rayDir, V, H, point, sumDiff, sumSpec, normal, objColor;
     glm::vec3 epsPoint;
+    glm::vec4 objColorVec4;
     float shininess, Ka, Kd, Ks, tLight, epsilon, distToLight, distToIntersect;
     int minNdx;
     Ray lightRay;
@@ -14,7 +15,8 @@ glm::vec3 blinn_phong(std::vector<Light*> lightList, GeomObj* obj, Ray ray, floa
     Ks = (float)obj->get_specular();
     epsilon = 0.001f;
 
-    objColor = obj->get_rgb();
+    objColorVec4 = obj->get_rgb();
+    objColor = glm::vec3(objColorVec4.x, objColorVec4.y, objColorVec4.z);
     rayDir = ray.get_direction();
     point = ray.get_pt() + (t * rayDir);
     normal = obj->get_normal(point);
@@ -99,6 +101,7 @@ glm::vec3 ck_diff_spec(float d, float s, float Rd, float roughness, float ior, g
 glm::vec3 cook_torrance(std::vector<Light*> lightList, GeomObj* obj, Ray ray, float t, std::vector<GeomObj*> objList) {
     glm::vec3 result, objColor, ambColor, diffColor, specColor, rayDir, point;
     glm::vec3 normal, lightColor, V, H, lightDir, sumDiffSpec, epsPoint;
+    glm::vec4 objColorVec4;
     float s, d, roughness, ior, Rd, epsilon, tLight, distToLight, distToIntersect;
     Ray lightRay;
     std::vector<float> tValues;
@@ -106,7 +109,8 @@ glm::vec3 cook_torrance(std::vector<Light*> lightList, GeomObj* obj, Ray ray, fl
 
     s = (float)obj->get_metallic();
     d = 1.0f - s;
-    objColor = obj->get_rgb();
+    objColorVec4 = obj->get_rgb();
+    objColor = glm::vec3(objColorVec4.x, objColorVec4.y, objColorVec4.z);
     ambColor = (float)obj->get_ambient() * objColor;
     Rd = (float)obj->get_diffuse();
     rayDir = ray.get_direction();
