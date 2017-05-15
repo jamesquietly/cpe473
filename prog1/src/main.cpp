@@ -111,7 +111,7 @@ int main(int argc, char **argv) {
                                 color = cook_torrance(lights, objList[minNdx], *ray, t, objList);
                             }
                             else {
-                                color = raytrace(ray->get_pt(), ray->get_direction(), objList, lights, 6, false);
+                                color = raytrace(ray->get_pt(), ray->get_direction(), &t, objList, lights, 6, false);
                             }
                             red = (unsigned char) std::round(glm::min(1.0f, color.x) * 255);
                             green = (unsigned char) std::round(glm::min(1.0f, color.y) * 255);
@@ -221,7 +221,7 @@ int main(int argc, char **argv) {
                 }
 
                 ray = create_cam_ray(cam, width, height, inX, inY);
-                raytrace(ray->get_pt(), ray->get_direction(), objList, lights, 6, true);
+                raytrace(ray->get_pt(), ray->get_direction(), &t, objList, lights, 6, true);
 
             }
         }

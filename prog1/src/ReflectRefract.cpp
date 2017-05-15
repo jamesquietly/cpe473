@@ -18,25 +18,29 @@ glm::vec3 beers_law(glm::vec4 objColor, float distance) {
     return attenuation;
 }
 
-glm::vec3 raytrace(glm::vec3 p0, glm::vec3 d, std::vector<GeomObj*> objList, std::vector<Light*> lightList, int depth, bool printMode) {
+glm::vec3 raytrace(glm::vec3 p0, glm::vec3 d, float *tPassBack, std::vector<GeomObj*> objList, std::vector<Light*> lightList, int depth, bool printMode) {
     glm::vec3 color, local, reflectColor, reflectionVec, intersectionPt, objNormal;
-    glm::vec3 refractionVec, refractionColor, attenuation;
+    glm::vec3 refractionVec, refractionColor, attenuation, refractPt;
     glm::vec4 objColor;
+    bool enterMedia = false;
     color = glm::vec3(0, 0, 0);
     int hitNdx;
     float t, epsilon, DdotN, n1, n2, localContribut, reflectContribut, refractContribut;
-    float reflectCoeff, refractCoeff, filterVal, fresnelReflectance, ior, distance;
+    float reflectCoeff, refractCoeff, filterVal, fresnelReflectance, ior, distance, reflectT, refractT;
     Ray ray = Ray(p0, d);
     epsilon = 0.001f;
+    reflectT = -1.0f;
+    refractT = -1.0f;
 
     if (depth > 0) {
 
         hitNdx = first_hit(ray, objList, &t);
         if (hitNdx != -1) {
+            *tPassBack = t;
             intersectionPt = p0 + t * d;
             objNormal = objList[hitNdx]->get_normal(intersectionPt);
             reflectionVec = ray.calc_reflection(objNormal);
-            reflectColor = raytrace(intersectionPt + reflectionVec * epsilon, reflectionVec, objList, lightList, depth - 1, printMode);
+            reflectColor = raytrace(intersectionPt + reflectionVec * epsilon, reflectionVec, &reflectT, objList, lightList, depth - 1, printMode);
             reflectCoeff = (float)objList[hitNdx]->get_reflection();
             DdotN = glm::dot(d, objNormal);
             ior = (float)objList[hitNdx]->get_ior();
@@ -48,9 +52,11 @@ glm::vec3 raytrace(glm::vec3 p0, glm::vec3 d, std::vector<GeomObj*> objList, std
                 n1 = ior;
                 n2 = 1.0f;
                 objNormal = -1.0f * objNormal;
+                enterMedia = true;
             }
             refractionVec = ray.calc_refraction(objNormal, n1, n2);
-            refractionColor = raytrace(intersectionPt + refractionVec * epsilon, refractionVec, objList, lightList, depth - 1, printMode);
+            refractPt = intersectionPt + refractionVec * epsilon;
+            refractionColor = raytrace(refractPt, refractionVec, &refractT, objList, lightList, depth - 1, printMode);
             refractCoeff = (float)objList[hitNdx]->get_refraction();
             
             objColor = objList[hitNdx]->get_rgb();
@@ -59,8 +65,6 @@ glm::vec3 raytrace(glm::vec3 p0, glm::vec3 d, std::vector<GeomObj*> objList, std
             localContribut = (1.0f - filterVal) * (1.0f - reflectCoeff);
             reflectContribut = (1.0f - filterVal) * reflectCoeff + filterVal * fresnelReflectance;
             refractContribut = filterVal * (1.0f - fresnelReflectance);
-            distance = glm::distance(p0, intersectionPt);
-            attenuation = beers_law(objColor, distance);
 
             if (printMode) {
                 std::cout << "Ray: {" << p0.x << " " << p0.y << " " << p0.z << "} -> {";
@@ -72,8 +76,14 @@ glm::vec3 raytrace(glm::vec3 p0, glm::vec3 d, std::vector<GeomObj*> objList, std
 
             local = blinn_phong(lightList, objList[hitNdx], ray, t, objList, printMode);
 
-
-            color += (localContribut * local + reflectContribut * reflectColor + refractContribut * refractionColor);
+            if (enterMedia && refractT != -1.0f) {
+                distance = glm::distance(intersectionPt, refractPt + refractT * refractionVec);
+                attenuation = beers_law(objColor, distance);
+                color += localContribut * local + reflectContribut * reflectColor + (refractContribut * refractionColor) * attenuation;
+            }
+            else {
+                color += localContribut * local + reflectContribut * reflectColor + refractContribut * refractionColor;
+            }
         }
     }
     return color;
