@@ -47,12 +47,12 @@ glm::vec3 raytrace(glm::vec3 p0, glm::vec3 d, float *tPassBack, std::vector<Geom
             if (DdotN < 0) {
                 n1 = 1.0f;
                 n2 = ior;
+                enterMedia = true;
             }
             else {
                 n1 = ior;
                 n2 = 1.0f;
                 objNormal = -1.0f * objNormal;
-                enterMedia = true;
             }
             refractionVec = ray.calc_refraction(objNormal, n1, n2);
             refractPt = intersectionPt + refractionVec * epsilon;
