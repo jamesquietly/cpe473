@@ -35,12 +35,7 @@ glm::vec3 blinn_phong(std::vector<Light*> lightList, GeomObj* obj, Ray ray, floa
         H = glm::normalize(V + lightDir);
 
         //check to see if light ray hits any object
-        for (int j = 0; j < objList.size(); j++) {
-            tLight = objList[j]->intersect(lightRay);
-            tValues.push_back(tLight);
-        }
-        minNdx = check_hit(tValues);
-
+        minNdx = first_hit(lightRay, objList, &tLight);
         
         // -1 means no hits along light ray, shadow check
         if (minNdx == -1) {
@@ -51,7 +46,7 @@ glm::vec3 blinn_phong(std::vector<Light*> lightList, GeomObj* obj, Ray ray, floa
         }
         else if (minNdx >= 0) {
             distToLight = glm::distance(lightList[i]->get_loc(), epsPoint);
-            distToIntersect = glm::distance(epsPoint + (tValues[minNdx] * lightDir), epsPoint);
+            distToIntersect = glm::distance(epsPoint + (tLight * lightDir), epsPoint);
 
             //check if light ray intersection is behind the light source
             if (distToIntersect > distToLight) {
@@ -136,11 +131,7 @@ glm::vec3 cook_torrance(std::vector<Light*> lightList, GeomObj* obj, Ray ray, fl
         lightRay = Ray(epsPoint, lightDir);
 
         //check for light ray intersection with objs
-        for (int j = 0; j < objList.size(); j++) {
-            tLight = objList[j]->intersect(lightRay);
-            tValues.push_back(tLight);
-        }
-        hitNdx = check_hit(tValues);
+        hitNdx = first_hit(lightRay, objList, &tLight);
         
         // -1 means no hit, no shadows
         if(hitNdx == -1) {
@@ -148,7 +139,7 @@ glm::vec3 cook_torrance(std::vector<Light*> lightList, GeomObj* obj, Ray ray, fl
         }
         else if (hitNdx) {
             distToLight = glm::distance(lightList[i]->get_loc(), epsPoint);
-            distToIntersect = glm::distance(epsPoint + (tValues[hitNdx] * lightDir), epsPoint);
+            distToIntersect = glm::distance(epsPoint + (tLight * lightDir), epsPoint);
 
             //check to see if obj is behing light source
             if (distToIntersect > distToLight) {

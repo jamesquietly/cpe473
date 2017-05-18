@@ -311,7 +311,7 @@ int first_hit(Ray ray, std::vector<GeomObj*> objList, float* newT) {
         invMat = objList[i]->get_inverseMatrix();
         transformPt = invMat * glm::vec4(ray.get_pt(), 1.0);
         transformDir = invMat * glm::vec4(ray.get_direction(), 0.0);
-        transformedRay = Ray(transformPt, transformDir);
+        transformedRay = Ray(glm::vec3(transformPt.x, transformPt.y, transformPt.z), glm::vec3(transformDir.x, transformDir.y, transformDir.z));
         t = objList[i]->intersect(transformedRay);
         tValues.push_back(t);
     }
@@ -333,24 +333,25 @@ glm::mat4 create_inv_mat(std::vector<glm::vec4> transformList) {
 
     for (int i = 0; i < transformList.size(); i++) {
         vect = transformList[i];
+        rotateMat = glm::mat4(1.0);
         if (vect.w == scale_t) {
             scaleMat = glm::scale(glm::mat4(1.0), glm::vec3(vect.x, vect.y, vect.z));
             transformMat = scaleMat * transformMat;
         }
         else if (vect.w == rotate_t) {
-            if (vect.x != 0) {
-                angle = vect.x * -1.0f;
-                axis = glm::vec3(1, 0, 0);
-            }
-            else if (vect.y != 0) {
-                angle = vect.y * -1.0f;
-                axis = glm::vec3(0, 1, 0);
-            }
-            else if (vect.z != 0) {
-                angle = vect.z * -1.0f;
-                axis = glm::vec3(0, 0, 1);
-            }
-            rotateMat = glm::rotate(glm::mat4(1.0), angle, axis);
+
+            angle = glm::radians(vect.x);
+            axis = glm::vec3(1, 0, 0);
+            rotateMat = glm::rotate(glm::mat4(1.0), angle, axis) * rotateMat;
+
+            angle = glm::radians(vect.y);
+            axis = glm::vec3(0, 1, 0);
+            rotateMat = glm::rotate(glm::mat4(1.0), angle, axis) * rotateMat;
+
+            angle = glm::radians(vect.z);
+            axis = glm::vec3(0, 0, 1);
+            rotateMat = glm::rotate(glm::mat4(1.0), angle, axis) * rotateMat;
+
             transformMat = rotateMat * transformMat;
         }
         else if (vect.w == translate_t) {

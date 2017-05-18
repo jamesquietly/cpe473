@@ -65,6 +65,7 @@ glm::vec3 raytrace(glm::vec3 p0, glm::vec3 d, float *tPassBack, std::vector<Geom
             refractCoeff = (float)objList[hitNdx]->get_refraction();
             
             //calc amount of color contributions
+            //set fresnel = 0 for fresnel off
             objColor = objList[hitNdx]->get_rgb();
             filterVal = objColor.w;
             fresnelReflectance = schlicks_aprrox(ior, objNormal, -1.0f * d);
