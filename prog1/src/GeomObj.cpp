@@ -12,6 +12,7 @@ GeomObj::GeomObj() {
     reflection = 0;
     refraction = 0;
     type = "GeomObj";
+    inverseMatrix = glm::mat4(1.0);
 }
 
 GeomObj::GeomObj(std::string t) {
@@ -26,9 +27,10 @@ GeomObj::GeomObj(std::string t) {
     reflection = 0;
     refraction = 0;
     type = t;
+    inverseMatrix = glm::mat4(1.0);
 }
 
-GeomObj::GeomObj(glm::vec4 c, std::vector<glm::vec4> transf, double amb, double diff, double spec, double rough, double metal, double ndx, double reflect, double refrac, std::string typeStr) {
+GeomObj::GeomObj(glm::vec4 c, std::vector<glm::vec4> transf, double amb, double diff, double spec, double rough, double metal, double ndx, double reflect, double refrac, std::string typeStr, glm::mat4 invMat) {
     rgb = glm::vec4(c.x, c.y, c.z, c.w);
     ambient = amb;
     diffuse = diff;
@@ -40,6 +42,7 @@ GeomObj::GeomObj(glm::vec4 c, std::vector<glm::vec4> transf, double amb, double 
     reflection = reflect;
     refraction = refrac;
     type = typeStr;
+    inverseMatrix = glm::mat4(invMat);
 }
 
 void GeomObj::print_transform() {
@@ -86,7 +89,7 @@ Sphere::Sphere() : GeomObj("Sphere") {
 
 }
 
-Sphere::Sphere(glm::vec3 cen, glm::vec4 c, double r, double amb, double diff, double spec, double rough, double metal, double ndx, double reflect, double refrac, std::vector<glm::vec4> transf) : GeomObj(c, transf, amb, diff, spec, rough, metal, ndx, reflect, refrac, "Sphere"){
+Sphere::Sphere(glm::vec3 cen, glm::vec4 c, double r, double amb, double diff, double spec, double rough, double metal, double ndx, double reflect, double refrac, std::vector<glm::vec4> transf, glm::mat4 invMat) : GeomObj(c, transf, amb, diff, spec, rough, metal, ndx, reflect, refrac, "Sphere", invMat){
     center = glm::vec3(cen.x, cen.y, cen.z);
     rad = r;
 }
@@ -98,7 +101,7 @@ void Sphere::print() {
     std::cout << "- Radius: " << rad << std::endl;
     GeomObj::print_color();
     GeomObj::print_material();
-    //GeomObj::print_transform();
+    GeomObj::print_transform();
 }
 
 float Sphere::intersect(Ray r) {
@@ -141,7 +144,7 @@ Plane::Plane() : GeomObj("Plane") {
 
 }
 
-Plane::Plane(glm::vec3 n, glm::vec4 c, double dis, double amb, double diff, double spec, double rough, double metal, double ndx, double reflect, double refrac, std::vector<glm::vec4> transf) : GeomObj(c, transf, amb, diff, spec, rough, metal, ndx, reflect, refrac, "Plane") {
+Plane::Plane(glm::vec3 n, glm::vec4 c, double dis, double amb, double diff, double spec, double rough, double metal, double ndx, double reflect, double refrac, std::vector<glm::vec4> transf, glm::mat4 invMat) : GeomObj(c, transf, amb, diff, spec, rough, metal, ndx, reflect, refrac, "Plane", invMat) {
     normal = glm::vec3(n.x, n.y, n.z);
     distance = dis;
 
@@ -154,7 +157,7 @@ void Plane::print() {
     std::cout << "- Distance: " << distance << std::endl;
     GeomObj::print_color();
     GeomObj::print_material();
-    //GeomObj::print_transform();
+    GeomObj::print_transform();
 }
 
 float Plane::intersect(Ray r) {
@@ -185,7 +188,7 @@ Triangle::Triangle() : GeomObj("Triangle") {
     pt3 = glm::vec3(0, 0, 0);
 }
 
-Triangle::Triangle(glm::vec3 p1, glm::vec3 p2, glm::vec3 p3, glm::vec4 c, double amb, double diff, double spec, double rough, double metal, double ndx, double reflect, double refrac, std::vector<glm::vec4> transf) : GeomObj(c, transf, amb, diff, spec, rough, metal, ndx, reflect, refrac, "Triangle") {
+Triangle::Triangle(glm::vec3 p1, glm::vec3 p2, glm::vec3 p3, glm::vec4 c, double amb, double diff, double spec, double rough, double metal, double ndx, double reflect, double refrac, std::vector<glm::vec4> transf, glm::mat4 invMat) : GeomObj(c, transf, amb, diff, spec, rough, metal, ndx, reflect, refrac, "Triangle", invMat) {
     pt1 = glm::vec3(p1.x, p1.y, p1.z);
     pt2 = glm::vec3(p2.x, p2.y, p2.z);
     pt3 = glm::vec3(p3.x, p3.y, p3.z);
@@ -198,6 +201,7 @@ void Triangle::print() {
     std::cout << "- Point 3: <" << pt3.x << " " << pt3.y << " " << pt3.z << ">\n";
     GeomObj::print_color();
     GeomObj::print_material();
+    GeomObj::print_transform();
 }
 
 float Triangle::intersect(Ray r) {
@@ -299,9 +303,16 @@ int first_hit(Ray ray, std::vector<GeomObj*> objList, float* newT) {
     float t;
     int hitNdx;
     std::vector<float> tValues;
+    Ray transformedRay;
+    glm::mat4 invMat;
+    glm::vec4 transformPt, transformDir;
 
     for (int i = 0; i < objList.size(); i++) {
-        t = objList[i]->intersect(ray);
+        invMat = objList[i]->get_inverseMatrix();
+        transformPt = invMat * glm::vec4(ray.get_pt(), 1.0);
+        transformDir = invMat * glm::vec4(ray.get_direction(), 0.0);
+        transformedRay = Ray(transformPt, transformDir);
+        t = objList[i]->intersect(transformedRay);
         tValues.push_back(t);
     }
 
@@ -311,4 +322,42 @@ int first_hit(Ray ray, std::vector<GeomObj*> objList, float* newT) {
     }
 
     return hitNdx;
+}
+
+glm::mat4 create_inv_mat(std::vector<glm::vec4> transformList) {
+    glm::mat4 transformMat = glm::mat4(1.0);
+    glm::mat4 scaleMat, rotateMat, translateMat;
+    glm::vec4 vect;
+    glm::vec3 axis;
+    float angle;
+
+    for (int i = 0; i < transformList.size(); i++) {
+        vect = transformList[i];
+        if (vect.w == scale_t) {
+            scaleMat = glm::scale(glm::mat4(1.0), glm::vec3(vect.x, vect.y, vect.z));
+            transformMat = scaleMat * transformMat;
+        }
+        else if (vect.w == rotate_t) {
+            if (vect.x != 0) {
+                angle = vect.x * -1.0f;
+                axis = glm::vec3(1, 0, 0);
+            }
+            else if (vect.y != 0) {
+                angle = vect.y * -1.0f;
+                axis = glm::vec3(0, 1, 0);
+            }
+            else if (vect.z != 0) {
+                angle = vect.z * -1.0f;
+                axis = glm::vec3(0, 0, 1);
+            }
+            rotateMat = glm::rotate(glm::mat4(1.0), angle, axis);
+            transformMat = rotateMat * transformMat;
+        }
+        else if (vect.w == translate_t) {
+            translateMat = glm::translate(glm::mat4(1.0), glm::vec3(vect.x, vect.y, vect.z));
+            transformMat = translateMat * transformMat;
+        }
+    }
+
+    return glm::inverse(transformMat);
 }

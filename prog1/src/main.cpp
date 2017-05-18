@@ -34,6 +34,21 @@ void print_help() {
     cout << "       raytrace pixeltrace <input_filename> <width> <height> <x> <y> [-altbrdf]\n";
 }
 
+void check_alt_args(int argc, char **argv, bool *fresnel, bool *superSample, bool *altBRDF){
+    for (int i = 0; i < argc; i++) {
+        string arg(argv[i]);
+        if (arg.compare("-fresnel") == 0) {
+            *fresnel = true;
+        }
+        if (arg.find("-ss=") != string::npos) {
+            *superSample = true;
+        }
+        if (arg.compare("-altbrdf") == 0) {
+            *altBRDF = true;
+        }
+    }
+}
+
 
 int main(int argc, char **argv) {
 
@@ -47,7 +62,7 @@ int main(int argc, char **argv) {
     Camera cam;
     Ray* ray;
     float t;
-    bool parsedFile;
+    bool parsedFile, useAltBRDF = false, useFresnel = false, useSuperSample = false;
     string altArg;
 
     cout << std::setprecision(4);
@@ -92,7 +107,7 @@ int main(int argc, char **argv) {
                 string outName = "output.png";
 
                 if (argc > 5) {
-                    altArg = string(argv[5]);
+                    check_alt_args(argc, argv, &useFresnel, &useSuperSample, &useAltBRDF);
                 }
 
                 unsigned char *data = new unsigned char[width * height * numChannels];
@@ -107,12 +122,9 @@ int main(int argc, char **argv) {
                         // -1 means no hits
                         minNdx = first_hit(*ray, objList, &t);
                         if (minNdx != -1) {
-                            if(altArg.compare("-altbrdf") == 0) {
-                                color = cook_torrance(lights, objList[minNdx], *ray, t, objList);
-                            }
-                            else {
-                                color = raytrace(ray->get_pt(), ray->get_direction(), &t, objList, lights, 6, false);
-                            }
+  
+                            color = raytrace(ray->get_pt(), ray->get_direction(), &t, objList, lights, 6, false, "Primary", useAltBRDF);
+
                             red = (unsigned char) std::round(glm::min(1.0f, color.x) * 255);
                             green = (unsigned char) std::round(glm::min(1.0f, color.y) * 255);
                             blue = (unsigned char) std::round(glm::min(1.0f, color.z) * 255);
@@ -193,7 +205,7 @@ int main(int argc, char **argv) {
                     cout << "Object Type: " << objList[minNdx]->get_type() << endl;
                     if (altArg.compare("-altbrdf") == 0) {
                         cout << "BRDF: Alternate" << endl;
-                        color = cook_torrance(lights, objList[minNdx], *ray, t, objList);
+                        color = cook_torrance(lights, objList[minNdx], *ray, t, objList, false);
                     }
                     else {
                         cout << "BRDF: Blinn-Phong" << endl;
@@ -218,11 +230,30 @@ int main(int argc, char **argv) {
 
                 if (argc > 7) {
                     altArg = string(argv[7]);
+                    if (altArg.compare("-altbrdf") == 0) {
+                        useAltBRDF = true;
+                    }
                 }
 
                 ray = create_cam_ray(cam, width, height, inX, inY);
-                raytrace(ray->get_pt(), ray->get_direction(), &t, objList, lights, 6, true);
+                raytrace(ray->get_pt(), ray->get_direction(), &t, objList, lights, 6, true, "Primary", useAltBRDF);
 
+            }
+            else if (mode.compare("printrays") == 0) {
+                width = atoi(argv[3]);
+                height = atoi(argv[4]);
+                inX = atoi(argv[5]);
+                inY = atoi(argv[6]);
+
+                if (argc > 7) {
+                    altArg = string(argv[7]);
+                    if (altArg.compare("-altbrdf") == 0) {
+                        useAltBRDF = true;
+                    }
+                }
+
+                ray = create_cam_ray(cam, width, height, inX, inY);
+                raytrace(ray->get_pt(), ray->get_direction(), &t, objList, lights, 6, true, "Primary", useAltBRDF);
             }
         }
         else {

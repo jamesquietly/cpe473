@@ -113,6 +113,7 @@ Sphere* parse_sphere(string sphereList) {
     vector<Sphere*> spheres;
     vector<double> vect;
     vector<glm::vec4> transform;
+    glm::mat4 invMat;
     glm::vec4 color;
     glm::vec3 cen;
     Sphere* sphere;
@@ -194,8 +195,9 @@ Sphere* parse_sphere(string sphereList) {
         sphereList.erase(0, pos + delimiter.length());
     }
 
+    invMat = create_inv_mat(transform);
 
-    sphere = new Sphere(cen, color, rad, amb, diff, spec, rough, metal, ior, reflect, refrac, transform);
+    sphere = new Sphere(cen, color, rad, amb, diff, spec, rough, metal, ior, reflect, refrac, transform, invMat);
 
     transform.clear();
     
@@ -209,6 +211,7 @@ Plane* parse_plane(string planeList) {
     vector<Plane*> planes;
     vector<double> vect;
     vector<glm::vec4> transform;
+    glm::mat4 invMat;
     glm::vec4 color;
     glm::vec3 norm;
     Plane* plane;
@@ -291,7 +294,9 @@ Plane* parse_plane(string planeList) {
         planeList.erase(0, pos + delimiter.length());
     }
 
-    plane = new Plane(norm, color, dis, amb, diff, spec, rough, metal, ior, reflect, refrac, transform);
+    invMat = create_inv_mat(transform);
+
+    plane = new Plane(norm, color, dis, amb, diff, spec, rough, metal, ior, reflect, refrac, transform, invMat);
 
     transform.clear();
 
@@ -301,6 +306,7 @@ Plane* parse_plane(string planeList) {
 Triangle* parse_triangle(string triangleList) {
     Triangle* triangle;
     vector<double> vect;
+    glm::mat4 invMat;
     glm::vec4 color;
     glm::vec3 pt1, pt2, pt3;
     vector<glm::vec4> transform;
@@ -388,7 +394,9 @@ Triangle* parse_triangle(string triangleList) {
         triangleList.erase(0, pos + delimiter.length());
     }
 
-    triangle = new Triangle(pt1, pt2, pt3, color, amb, diff, spec, rough, metal, ior, reflect, refrac, transform);
+    invMat = create_inv_mat(transform);
+
+    triangle = new Triangle(pt1, pt2, pt3, color, amb, diff, spec, rough, metal, ior, reflect, refrac, transform, invMat);
 
     return triangle;
 

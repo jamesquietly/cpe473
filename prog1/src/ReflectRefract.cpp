@@ -18,7 +18,7 @@ glm::vec3 beers_law(glm::vec4 objColor, float distance) {
     return attenuation;
 }
 
-glm::vec3 raytrace(glm::vec3 p0, glm::vec3 d, float *tPassBack, std::vector<GeomObj*> objList, std::vector<Light*> lightList, int depth, bool printMode) {
+glm::vec3 raytrace(glm::vec3 p0, glm::vec3 d, float *tPassBack, std::vector<GeomObj*> objList, std::vector<Light*> lightList, int depth, bool printMode, std::string rayType, bool altBRDF) {
     glm::vec3 color, local, reflectColor, reflectionVec, intersectionPt, objNormal;
     glm::vec3 refractionVec, refractionColor, attenuation, refractPt;
     glm::vec4 objColor;
@@ -36,12 +36,16 @@ glm::vec3 raytrace(glm::vec3 p0, glm::vec3 d, float *tPassBack, std::vector<Geom
 
         hitNdx = first_hit(ray, objList, &t);
         if (hitNdx != -1) {
+            //intersection
             *tPassBack = t;
             intersectionPt = p0 + t * d;
             objNormal = objList[hitNdx]->get_normal(intersectionPt);
+            
+            //reflection
             reflectionVec = ray.calc_reflection(objNormal);
-            reflectColor = raytrace(intersectionPt + reflectionVec * epsilon, reflectionVec, &reflectT, objList, lightList, depth - 1, printMode);
             reflectCoeff = (float)objList[hitNdx]->get_reflection();
+
+            //check if entering or leaving media
             DdotN = glm::dot(d, objNormal);
             ior = (float)objList[hitNdx]->get_ior();
             if (DdotN < 0) {
@@ -54,11 +58,13 @@ glm::vec3 raytrace(glm::vec3 p0, glm::vec3 d, float *tPassBack, std::vector<Geom
                 n2 = 1.0f;
                 objNormal = -1.0f * objNormal;
             }
+
+            //refraction
             refractionVec = ray.calc_refraction(objNormal, n1, n2);
             refractPt = intersectionPt + refractionVec * epsilon;
-            refractionColor = raytrace(refractPt, refractionVec, &refractT, objList, lightList, depth - 1, printMode);
             refractCoeff = (float)objList[hitNdx]->get_refraction();
             
+            //calc amount of color contributions
             objColor = objList[hitNdx]->get_rgb();
             filterVal = objColor.w;
             fresnelReflectance = schlicks_aprrox(ior, objNormal, -1.0f * d);
@@ -67,14 +73,22 @@ glm::vec3 raytrace(glm::vec3 p0, glm::vec3 d, float *tPassBack, std::vector<Geom
             refractContribut = filterVal * (1.0f - fresnelReflectance);
 
             if (printMode) {
+                std::cout << "Iteration type: " << rayType << std::endl;
                 std::cout << "Ray: {" << p0.x << " " << p0.y << " " << p0.z << "} -> {";
                 std::cout << d.x << " " << d.y << " " << d.z << "}\n";
-                std::cout << "Hit Object ID (" << hitNdx << " - " << objList[hitNdx]->get_type() << ") at T = ";
-                std::cout << t << ", Intersection = {" << intersectionPt.x << " " << intersectionPt.y << " " << intersectionPt.z << "}\n";
-                std::cout << "Normal {" << objNormal.x << " " << objNormal.y << " " << objNormal.z << "}\n";
+                std::cout << "Hit Object: (ID #" << hitNdx + 1 << " - " << objList[hitNdx]->get_type() << ")\n";
+                std::cout << "Intersection: {" << intersectionPt.x << " " << intersectionPt.y << " " << intersectionPt.z << "} at T = " << t << std::endl;
+                std::cout << "Normal: {" << objNormal.x << " " << objNormal.y << " " << objNormal.z << "}\n";
             }
-
-            local = blinn_phong(lightList, objList[hitNdx], ray, t, objList, printMode);
+            
+            if (altBRDF) {
+                local = cook_torrance(lightList, objList[hitNdx], ray, t, objList, printMode);
+            }
+            else {
+                local = blinn_phong(lightList, objList[hitNdx], ray, t, objList, printMode);
+            }
+            reflectColor = raytrace(intersectionPt + reflectionVec * epsilon, reflectionVec, &reflectT, objList, lightList, depth - 1, printMode, "Relfection", altBRDF);
+            refractionColor = raytrace(refractPt, refractionVec, &refractT, objList, lightList, depth - 1, printMode, "Refraction", altBRDF);
 
             if (enterMedia && refractT != -1.0f) {
                 distance = glm::distance(intersectionPt, refractPt + refractT * refractionVec);

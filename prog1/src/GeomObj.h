@@ -2,6 +2,7 @@
 #define __GeomObj__
 
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #include <vector>
 #include <string>
 #include <iostream>
@@ -14,7 +15,7 @@ class GeomObj{
 public:
     GeomObj();
     GeomObj(std::string t);
-    GeomObj(glm::vec4 c, std::vector<glm::vec4> transf, double amb, double diff, double spec, double rough, double metal, double ndx, double reflect, double refrac, std::string typeStr);
+    GeomObj(glm::vec4 c, std::vector<glm::vec4> transf, double amb, double diff, double spec, double rough, double metal, double ndx, double reflect, double refrac, std::string typeStr, glm::mat4 invMat);
 
     glm::vec4 get_rgb() const {return rgb;}
     std::vector<glm::vec4> get_transform() const {return transform;}
@@ -27,6 +28,7 @@ public:
     double get_reflection() const {return reflection;}
     double get_refraction() const {return refraction;}
     std::string get_type() const {return type;}
+    glm::mat4 get_inverseMatrix() const {return inverseMatrix;}
 
     void set_rgb(glm::vec4 v) {rgb = glm::vec4(v.x, v.y, v.z, v.w);}
     void set_transform(std::vector<glm::vec4> t) {transform = t;}
@@ -38,6 +40,7 @@ public:
     void set_ior(double i) {ior = i;}
     void set_reflection(double r) {reflection = r;}
     void set_refraction(double r) {refraction = r;}
+    void set_inverseMatrix(glm::mat4 iMat) {inverseMatrix = glm::mat4(iMat);}
 
     void print_transform();
     void print_color();
@@ -52,6 +55,7 @@ protected:
     std::vector<glm::vec4> transform;
     double ambient, diffuse, specular, roughness, metallic, ior, reflection, refraction;
     std::string type;
+    glm::mat4 inverseMatrix;
 
 private:
 
@@ -61,7 +65,7 @@ private:
 class Sphere : public GeomObj {
 public:
     Sphere();
-    Sphere(glm::vec3 cen, glm::vec4 c, double r, double amb, double diff, double spec, double rough, double metal, double ndx, double reflect, double refrac, std::vector<glm::vec4> transf);
+    Sphere(glm::vec3 cen, glm::vec4 c, double r, double amb, double diff, double spec, double rough, double metal, double ndx, double reflect, double refrac, std::vector<glm::vec4> transf, glm::mat4 invMat);
 
     glm::vec3 get_center() const {return center;}
     double get_rad() const {return rad;}
@@ -82,7 +86,7 @@ private:
 class Plane : public GeomObj {
 public:
     Plane();
-    Plane(glm::vec3 n, glm::vec4 c, double dis, double amb, double diff, double spec, double rough, double metal, double ndx, double reflect, double refrac, std::vector<glm::vec4> transf);
+    Plane(glm::vec3 n, glm::vec4 c, double dis, double amb, double diff, double spec, double rough, double metal, double ndx, double reflect, double refrac, std::vector<glm::vec4> transf, glm::mat4 invMat);
     glm::vec3 get_normal() const {return normal;}
     double get_distance() const {return distance;}
 
@@ -102,7 +106,7 @@ private:
 class Triangle : public GeomObj {
 public:
     Triangle();
-    Triangle(glm::vec3 p1, glm::vec3 p2, glm::vec3 p3, glm::vec4 c, double amb, double diff, double spec, double rough, double metal, double ndx, double reflect, double refrac, std::vector<glm::vec4> transf);
+    Triangle(glm::vec3 p1, glm::vec3 p2, glm::vec3 p3, glm::vec4 c, double amb, double diff, double spec, double rough, double metal, double ndx, double reflect, double refrac, std::vector<glm::vec4> transf, glm::mat4 invMat);
     glm::vec3 get_pt1() const {return pt1;}
     glm::vec3 get_pt2() const {return pt2;}
     glm::vec3 get_pt3() const {return pt3;}
@@ -123,5 +127,6 @@ private:
 float determinant(std::vector<float> vect);
 int check_hit(std::vector<float> values);
 int first_hit(Ray ray, std::vector<GeomObj*> objList, float* newT);
+glm::mat4 create_inv_mat(std::vector<glm::vec4> transformList);
 
 #endif

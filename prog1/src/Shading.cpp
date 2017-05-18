@@ -67,9 +67,9 @@ glm::vec3 blinn_phong(std::vector<Light*> lightList, GeomObj* obj, Ray ray, floa
     
     result = ambColor + sumDiff + sumSpec;
     if (printMode) {
-        std::cout << "Ambient: " << ambColor.x << ", " << ambColor.y << ", " << ambColor.z << std::endl;
-        std::cout << "Diffuse: " << sumDiff.x << ", " << sumDiff.y << ", " << sumDiff.z << std::endl;
-        std::cout << "Specular: " << sumSpec.x << ", " << sumSpec.y << ", " << sumSpec.z << "\n\n";
+        std::cout << "Ambient: {" << ambColor.x << ", " << ambColor.y << ", " << ambColor.z << "}\n";
+        std::cout << "Diffuse: {" << sumDiff.x << ", " << sumDiff.y << ", " << sumDiff.z << "}\n";
+        std::cout << "Specular: {" << sumSpec.x << ", " << sumSpec.y << ", " << sumSpec.z << "}\n\n";
     }
     return result;
 }
@@ -103,7 +103,7 @@ glm::vec3 ck_diff_spec(float d, float s, float Rd, float roughness, float ior, g
     return diffSpecColor;
 }
 
-glm::vec3 cook_torrance(std::vector<Light*> lightList, GeomObj* obj, Ray ray, float t, std::vector<GeomObj*> objList) {
+glm::vec3 cook_torrance(std::vector<Light*> lightList, GeomObj* obj, Ray ray, float t, std::vector<GeomObj*> objList, bool printMode) {
     glm::vec3 result, objColor, ambColor, diffColor, specColor, rayDir, point;
     glm::vec3 normal, lightColor, V, H, lightDir, sumDiffSpec, epsPoint;
     glm::vec4 objColorVec4;
@@ -156,6 +156,10 @@ glm::vec3 cook_torrance(std::vector<Light*> lightList, GeomObj* obj, Ray ray, fl
             }
         }
         
+    }
+
+    if (printMode) {
+        std::cout << "Ambient: {" << ambColor.x << ", " << ambColor.y << ", " << ambColor.z << "}\n\n";
     }
 
     result = ambColor + sumDiffSpec;
