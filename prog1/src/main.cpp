@@ -123,7 +123,7 @@ int main(int argc, char **argv) {
                         minNdx = first_hit(*ray, objList, &t);
                         if (minNdx != -1) {
   
-                            color = raytrace(ray->get_pt(), ray->get_direction(), &t, objList, lights, 6, false, "Primary", useAltBRDF);
+                            color = raytrace(ray->get_pt(), ray->get_direction(), &t, objList, lights, 6, false, "Primary", useAltBRDF, useFresnel);
 
                             red = (unsigned char) std::round(glm::min(1.0f, color.x) * 255);
                             green = (unsigned char) std::round(glm::min(1.0f, color.y) * 255);
@@ -236,7 +236,7 @@ int main(int argc, char **argv) {
                 }
 
                 ray = create_cam_ray(cam, width, height, inX, inY);
-                raytrace(ray->get_pt(), ray->get_direction(), &t, objList, lights, 6, true, "Primary", useAltBRDF);
+                raytrace(ray->get_pt(), ray->get_direction(), &t, objList, lights, 6, true, "Primary", useAltBRDF, false);
 
             }
             else if (mode.compare("printrays") == 0) {
@@ -246,14 +246,11 @@ int main(int argc, char **argv) {
                 inY = atoi(argv[6]);
 
                 if (argc > 7) {
-                    altArg = string(argv[7]);
-                    if (altArg.compare("-altbrdf") == 0) {
-                        useAltBRDF = true;
-                    }
+                    check_alt_args(argc, argv, &useFresnel, &useSuperSample, &useAltBRDF);
                 }
 
                 ray = create_cam_ray(cam, width, height, inX, inY);
-                raytrace(ray->get_pt(), ray->get_direction(), &t, objList, lights, 6, true, "Primary", useAltBRDF);
+                raytrace(ray->get_pt(), ray->get_direction(), &t, objList, lights, 6, true, "Primary", useAltBRDF, useFresnel);
             }
         }
         else {

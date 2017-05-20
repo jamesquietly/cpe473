@@ -4,6 +4,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <iostream>
 #include <vector>
+#include <cmath>
 #include "GeomObj.h"
 #include "Light.h"
 #include "Ray.h"
@@ -11,6 +12,6 @@
 
 float schlick_approx(float ior, glm::vec3 normal, glm::vec3 view);
 glm::vec3 beers_law(glm::vec4 objColor, float distance);
-glm::vec3 raytrace(glm::vec3 p0, glm::vec3 d, float *tPassBack, std::vector<GeomObj*> objList, std::vector<Light*> lightList, int depth, bool printMode, std::string rayType, bool altBRDF);
+glm::vec3 raytrace(glm::vec3 p0, glm::vec3 d, float *tPassBack, std::vector<GeomObj*> objList, std::vector<Light*> lightList, int depth, bool printMode, std::string rayType, bool altBRDF, bool useFresnel);
 
 #endif
