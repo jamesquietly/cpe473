@@ -52,3 +52,28 @@ Ray* create_cam_ray(Camera cam, int width, int height, int i, int j) {
 
     return ray;
 }
+
+/* create a single ray for super sample*/
+Ray* create_cam_ray(Camera cam, int width, int height, float Us, float Vs) {
+    float Ws;
+    glm::vec3 s, u, v, w, dir, p0;
+    Ray* ray;
+
+    p0 = cam.get_loc();
+
+    //Us = (i + 0.5)/width - 0.5;
+    //Vs = (j + 0.5)/height - 0.5;
+    Ws = -1.0f;
+
+    u = cam.get_right();
+    v = cam.get_up();
+    w = -1.0f * glm::normalize(cam.get_lookAt() - p0);
+
+    s = p0 + Us * u + Vs * v + Ws * w;
+
+    dir = glm::normalize(s - p0);
+
+    ray = new Ray(p0, dir);
+
+    return ray;
+}

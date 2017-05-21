@@ -5,6 +5,8 @@ glm::vec3 blinn_phong(std::vector<Light*> lightList, GeomObj* obj, Ray ray, floa
     glm::vec3 lightDir, rayDir, V, H, point, sumDiff, sumSpec, normal, objColor;
     glm::vec3 epsPoint;
     glm::vec4 objColorVec4;
+    glm::vec4 normalTransposed;
+    glm::mat4 normalMatrix;
     float shininess, Ka, Kd, Ks, tLight, epsilon, distToLight, distToIntersect;
     int minNdx;
     Ray lightRay;
@@ -19,7 +21,12 @@ glm::vec3 blinn_phong(std::vector<Light*> lightList, GeomObj* obj, Ray ray, floa
     objColor = glm::vec3(objColorVec4.x, objColorVec4.y, objColorVec4.z);
     rayDir = ray.get_direction();
     point = ray.get_pt() + (t * rayDir);
+
     normal = obj->get_normal(point);
+    normalMatrix = glm::transpose(obj->get_inverseMatrix());
+    normalTransposed = normalMatrix * glm::vec4(normal.x, normal.y, normal.z, 0.0);
+    normal = glm::vec3(normalTransposed.x, normalTransposed.y, normalTransposed.z);
+
     V = glm::normalize(-1.0f * rayDir);
     ambColor = (float)Ka * objColor;
     shininess = (2.0f / glm::pow((float)obj->get_roughness(), 2) - 2.0f);
@@ -52,12 +59,20 @@ glm::vec3 blinn_phong(std::vector<Light*> lightList, GeomObj* obj, Ray ray, floa
             if (distToIntersect > distToLight) {
                 diffColor = Kd * objColor  * lightColor * glm::max(0.0f, glm::dot(normal, lightDir));
                 specColor = Ks * objColor  * lightColor * glm::max(0.0f, glm::pow(glm::dot(H, normal), shininess));
+                if (std::isnan(specColor.x) || std::isnan(specColor.y) || std::isnan(specColor.z)) {
+                    specColor = glm::vec3(0, 0, 0);
+                    //std::cout << "specColor is nan" << std::endl;
+                }
                 sumDiff += diffColor;
                 sumSpec += specColor;
             } 
 
         } 
 
+    }
+    if (std::isnan(sumSpec.x)) {
+        sumSpec = glm::vec3(0, 0, 0);
+        //std::cout << "sumSpec is nan" << std::endl;
     }
     
     result = ambColor + sumDiff + sumSpec;

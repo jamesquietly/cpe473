@@ -2,6 +2,7 @@
 #define __Shading__
 #include <vector>
 #include <iostream>
+#include <cmath>
 #include "Light.h"
 #include "GeomObj.h"
 #include "Ray.h"

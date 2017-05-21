@@ -34,14 +34,16 @@ void print_help() {
     cout << "       raytrace pixeltrace <input_filename> <width> <height> <x> <y> [-altbrdf]\n";
 }
 
-void check_alt_args(int argc, char **argv, bool *fresnel, bool *superSample, bool *altBRDF){
+void check_alt_args(int argc, char **argv, bool *fresnel, bool *altBRDF, int *superSample){
+    int foundNdx;
     for (int i = 0; i < argc; i++) {
         string arg(argv[i]);
         if (arg.compare("-fresnel") == 0) {
             *fresnel = true;
         }
         if (arg.find("-ss=") != string::npos) {
-            *superSample = true;
+            foundNdx = arg.find("-ss=");
+            *superSample = stoi(arg.substr(foundNdx + 4, string::npos));
         }
         if (arg.compare("-altbrdf") == 0) {
             *altBRDF = true;
@@ -52,7 +54,7 @@ void check_alt_args(int argc, char **argv, bool *fresnel, bool *superSample, boo
 
 int main(int argc, char **argv) {
 
-    int width, height, inX, inY, minNdx, numChannels;
+    int width, height, inX, inY, minNdx, numChannels, ssArg = 1;
     char *filename;
     vector<Light*> lights;
     vector<GeomObj*> objList;
@@ -62,7 +64,7 @@ int main(int argc, char **argv) {
     Camera cam;
     Ray* ray;
     float t;
-    bool parsedFile, useAltBRDF = false, useFresnel = false, useSuperSample = false;
+    bool parsedFile, useAltBRDF = false, useFresnel = false;
     string altArg;
 
     cout << std::setprecision(4);
@@ -105,39 +107,51 @@ int main(int argc, char **argv) {
                 height = atoi(argv[4]);
                 numChannels = 3;
                 string outName = "output.png";
+                float Us, Vs;
 
                 if (argc > 5) {
-                    check_alt_args(argc, argv, &useFresnel, &useSuperSample, &useAltBRDF);
+                    check_alt_args(argc, argv, &useFresnel, &useAltBRDF, &ssArg);
                 }
 
                 unsigned char *data = new unsigned char[width * height * numChannels];
-
+                unsigned char red, green, blue, sumRed, sumGreen, sumBlue;
 
                 for (int y = 0; y < height; y++) {
                     for (int x = 0; x < width; x++) {
-                        ray = create_cam_ray(cam, width, height, x, y);
+                        sumRed = 0;
+                        sumGreen = 0;
+                        sumBlue = 0;
+                        for (int n = 0; n < ssArg; n++) {
+                            for (int m = 0; m < ssArg; m++) {
+                                Us = -0.5f + (x + 0.5f + (-0.5f + (m + 0.5f)/ssArg))/width;
+                                Vs = -0.5f + (y + 0.5f + (-0.5f + (n + 0.5f)/ssArg))/height;
+                                ray = create_cam_ray(cam, width, height, Us, Vs);
 
-                        unsigned char red, green, blue;
+                                // -1 means no hits
+                                minNdx = first_hit(*ray, objList, &t);
+                                if (minNdx != -1) {
+          
+                                    color = raytrace(ray->get_pt(), ray->get_direction(), &t, objList, lights, 6, false, "Primary", useAltBRDF, useFresnel);
 
-                        // -1 means no hits
-                        minNdx = first_hit(*ray, objList, &t);
-                        if (minNdx != -1) {
-  
-                            color = raytrace(ray->get_pt(), ray->get_direction(), &t, objList, lights, 6, false, "Primary", useAltBRDF, useFresnel);
-
-                            red = (unsigned char) std::round(glm::min(1.0f, color.x) * 255);
-                            green = (unsigned char) std::round(glm::min(1.0f, color.y) * 255);
-                            blue = (unsigned char) std::round(glm::min(1.0f, color.z) * 255);
+                                    red = (unsigned char) std::round(glm::min(1.0f, color.x) * 255);
+                                    green = (unsigned char) std::round(glm::min(1.0f, color.y) * 255);
+                                    blue = (unsigned char) std::round(glm::min(1.0f, color.z) * 255);
+                                }
+                                else {
+                                    red = 0;
+                                    green = 0;
+                                    blue = 0;
+                                }
+                                
+                                sumRed += red;
+                                sumGreen += green;
+                                sumBlue += blue;
+                            }
                         }
-                        else {
-                            red = 0;
-                            green = 0;
-                            blue = 0;
-                        }
-                        
-                        data[(width * numChannels) * (height - 1 - y) + numChannels * x + 0] = red;
-                        data[(width * numChannels) * (height - 1 - y) + numChannels * x + 1] = green;
-                        data[(width * numChannels) * (height - 1 - y) + numChannels * x + 2] = blue;
+
+                        data[(width * numChannels) * (height - 1 - y) + numChannels * x + 0] = sumRed/(ssArg * ssArg);
+                        data[(width * numChannels) * (height - 1 - y) + numChannels * x + 1] = sumGreen/(ssArg * ssArg);
+                        data[(width * numChannels) * (height - 1 - y) + numChannels * x + 2] = sumBlue/(ssArg * ssArg);
                     }
                 }
 
@@ -246,7 +260,7 @@ int main(int argc, char **argv) {
                 inY = atoi(argv[6]);
 
                 if (argc > 7) {
-                    check_alt_args(argc, argv, &useFresnel, &useSuperSample, &useAltBRDF);
+                    check_alt_args(argc, argv, &useFresnel, &useAltBRDF, &ssArg);
                 }
 
                 ray = create_cam_ray(cam, width, height, inX, inY);

@@ -32,5 +32,6 @@ private:
 
 
 Ray* create_cam_ray(Camera cam, int width, int height, int i, int j);
+Ray* create_cam_ray(Camera cam, int width, int height, float Us, float Vs);
 
 #endif

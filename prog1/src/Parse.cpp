@@ -137,9 +137,17 @@ Sphere* parse_sphere(string sphereList) {
 
     rad = parse_double(sphereList, ">,");
 
-    amb = parse_double(sphereList, "ambient");
+    amb = 0;
+    found = sphereList.find("ambient");
+    if (found != string::npos) {
+        amb = parse_double(sphereList, "ambient");
+    }
 
-    diff = parse_double(sphereList, "diffuse");
+    diff = 0;
+    found = sphereList.find("diffuse");
+    if (found != string::npos) {
+        diff = parse_double(sphereList, "diffuse");
+    }
 
     spec = 0;
     found = sphereList.find("specular");
@@ -512,7 +520,6 @@ bool parse_objects(char *filename, Camera *cameraObj, vector<Light*> *lights, ve
 
         *cameraObj = parse_camera(cameraVec);
         *lights = parse_light(lightVec);
-
         result = true;
     }
     else {
