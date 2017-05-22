@@ -114,13 +114,11 @@ int main(int argc, char **argv) {
                 }
 
                 unsigned char *data = new unsigned char[width * height * numChannels];
-                unsigned char red, green, blue, sumRed, sumGreen, sumBlue;
+                unsigned char red, green, blue;
 
                 for (int y = 0; y < height; y++) {
                     for (int x = 0; x < width; x++) {
-                        sumRed = 0;
-                        sumGreen = 0;
-                        sumBlue = 0;
+                        color = glm::vec3(0, 0, 0);
                         for (int n = 0; n < ssArg; n++) {
                             for (int m = 0; m < ssArg; m++) {
                                 Us = -0.5f + (x + 0.5f + (-0.5f + (m + 0.5f)/ssArg))/width;
@@ -130,28 +128,21 @@ int main(int argc, char **argv) {
                                 // -1 means no hits
                                 minNdx = first_hit(*ray, objList, &t);
                                 if (minNdx != -1) {
-          
-                                    color = raytrace(ray->get_pt(), ray->get_direction(), &t, objList, lights, 6, false, "Primary", useAltBRDF, useFresnel);
-
-                                    red = (unsigned char) std::round(glm::min(1.0f, color.x) * 255);
-                                    green = (unsigned char) std::round(glm::min(1.0f, color.y) * 255);
-                                    blue = (unsigned char) std::round(glm::min(1.0f, color.z) * 255);
-                                }
-                                else {
-                                    red = 0;
-                                    green = 0;
-                                    blue = 0;
+                                    color += raytrace(ray->get_pt(), ray->get_direction(), &t, objList, lights, 6, false, "Primary", useAltBRDF, useFresnel);
                                 }
                                 
-                                sumRed += red;
-                                sumGreen += green;
-                                sumBlue += blue;
                             }
                         }
 
-                        data[(width * numChannels) * (height - 1 - y) + numChannels * x + 0] = sumRed/(ssArg * ssArg);
-                        data[(width * numChannels) * (height - 1 - y) + numChannels * x + 1] = sumGreen/(ssArg * ssArg);
-                        data[(width * numChannels) * (height - 1 - y) + numChannels * x + 2] = sumBlue/(ssArg * ssArg);
+                        color = color/((float)ssArg * (float)ssArg);
+
+                        red = (unsigned char) std::round(glm::min(1.0f, color.x) * 255);
+                        green = (unsigned char) std::round(glm::min(1.0f, color.y) * 255);
+                        blue = (unsigned char) std::round(glm::min(1.0f, color.z) * 255);
+
+                        data[(width * numChannels) * (height - 1 - y) + numChannels * x + 0] = red;
+                        data[(width * numChannels) * (height - 1 - y) + numChannels * x + 1] = green;
+                        data[(width * numChannels) * (height - 1 - y) + numChannels * x + 2] = blue;
                     }
                 }
 
