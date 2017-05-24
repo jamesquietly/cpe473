@@ -33,6 +33,7 @@ void print_help() {
     cout << "       raytrace firsthit <input_filename> <width> <height> <x> <y>\n";
     cout << "       raytrace pixelcolor <input_filename> <width> <height> <x> <y> [-altbrdf]\n";
     cout << "       raytrace pixeltrace <input_filename> <width> <height> <x> <y> [-altbrdf]\n";
+    cout << "       raytrace printrays <input_filename> <width> <height> <x> <y> [-altbrdf]\n";
 }
 
 void check_alt_args(int argc, char **argv, bool *fresnel, bool *altBRDF, int *superSample){

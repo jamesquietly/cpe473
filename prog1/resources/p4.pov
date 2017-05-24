@@ -15,13 +15,23 @@ sphere { <0, -2, 7>, 1.75
   finish {ambient 0.2 diffuse 0.4 specular 0.7 roughness 0.02 ior 1.6 reflection 0.7}
 }
 
-sphere { <4.6, 1.5, 1.5>, 4.5
+sphere { <4.6, -1, 1.0>, 2.0
   pigment { color rgbf <0.0, 0.7, 1.0, 0.9> }
   finish {ambient 0.2 diffuse 0.4 specular 0.7 roughness 0.02 ior 1.6}
 }
 
-sphere { <-4.6, 1.5, 1.5>, 4.5
-  pigment { color rgbf <1.0, 0.0, 0.4, 0.9> }
+sphere { <-4.6, -1, 1.0>, 2.0
+  pigment { color rgbf <1.0, 0.1, 0.4, 0.9> }
+  finish {ambient 0.2 diffuse 0.4 specular 0.7 roughness 0.02 ior 1.6}
+}
+
+sphere { <3.0, 3.5, 1.0>, 2.0
+  pigment { color rgbf <0.2, 0.9, 0.1, 0.9> }
+  finish {ambient 0.2 diffuse 0.4 specular 0.7 roughness 0.02 ior 1.6}
+}
+
+sphere { <-3.0, 3.5, 1.0>, 2.0
+  pigment { color rgbf <1.0, 0.6, 0.4, 0.9> }
   finish {ambient 0.2 diffuse 0.4 specular 0.7 roughness 0.02 ior 1.6}
 }
 
