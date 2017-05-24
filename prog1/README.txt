@@ -1,10 +1,9 @@
 Author: James Ly
 
-I wasn't able to get beer's law or the pixeltrace to work as the expected program.
-However, I do still have both implemented. Beer's law is in the ReflectRefract.cpp.
-The recursive raytrace is also in the the ReflectRefract.cpp
-I seem to have reflection, refraction, and schlick's approximation working. 
-Colors might be slightly brighter.
+Transformations is not being shaded correctly yet. 
+I think it's because I am not calculating the normals correctly.
+Everything like schlick's and anit aliasing seems to be working.
+I also made a pov and rendered image: p4.pov and p4.png in resources folder
 
 
 Usage: raytrace render <input_filename> <width> <height>
@@ -13,3 +12,4 @@ Usage: raytrace render <input_filename> <width> <height>
        raytrace firsthit <input_filename> <width> <height> <x> <y>
        raytrace pixelcolor <input_filename> <width> <height> <x> <y> [-altbrdf]
        raytrace pixeltrace <input_filename> <width> <height> <x> <y> [-altbrdf]
+       raytrace printrays <input_filename> <width> <height> <x> <y> [-altbrdf]
