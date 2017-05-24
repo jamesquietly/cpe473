@@ -21,7 +21,8 @@ glm::vec3 beers_law(glm::vec4 objColor, float distance) {
 glm::vec3 raytrace(glm::vec3 p0, glm::vec3 d, float *tPassBack, std::vector<GeomObj*> objList, std::vector<Light*> lightList, int depth, bool printMode, std::string rayType, bool altBRDF, bool useFresnel) {
     glm::vec3 color, local, reflectColor, reflectionVec, intersectionPt, objNormal;
     glm::vec3 refractionVec, refractionColor, attenuation, refractPt;
-    glm::vec4 objColor;
+    glm::vec4 objColor, normalTransposed;
+    glm::mat4 normalMatrix;
     bool enterMedia = false;
     color = glm::vec3(0, 0, 0);
     int hitNdx;
@@ -31,15 +32,37 @@ glm::vec3 raytrace(glm::vec3 p0, glm::vec3 d, float *tPassBack, std::vector<Geom
     epsilon = 0.001f;
     reflectT = -1.0f;
     refractT = -1.0f;
+    Intersection intersectObj;
+
+    Ray transformedRay;
+    glm::mat4 invMat;
+    glm::vec4 transformPt, transformDir;
+
+    
 
     if (depth > 0) {
 
-        hitNdx = first_hit(ray, objList, &t);
+        intersectObj = first_hit(ray, objList, &t);
+        hitNdx = intersectObj.get_hitNdx();
         if (hitNdx != -1) {
             //intersection
             *tPassBack = t;
+            //obj space
             intersectionPt = p0 + t * d;
+
             objNormal = objList[hitNdx]->get_normal(intersectionPt);
+
+            normalMatrix = glm::transpose(objList[hitNdx]->get_inverseMatrix());
+            normalTransposed = normalMatrix * glm::vec4(objNormal.x, objNormal.y, objNormal.z, 0.0);
+            objNormal = glm::vec3(normalTransposed.x, normalTransposed.y, normalTransposed.z);
+
+            //world space
+            invMat = objList[hitNdx]->get_inverseMatrix();
+            transformPt = invMat * glm::vec4(ray.get_pt(), 1.0);
+            transformDir = invMat * glm::vec4(ray.get_direction(), 0.0);
+            transformedRay = Ray(glm::vec3(transformPt.x, transformPt.y, transformPt.z), glm::vec3(transformDir.x, transformDir.y, transformDir.z));
+
+            intersectionPt = transformedRay.get_pt() + t * transformedRay.get_direction(); 
             
             //reflection
             reflectionVec = ray.calc_reflection(objNormal);
@@ -88,16 +111,19 @@ glm::vec3 raytrace(glm::vec3 p0, glm::vec3 d, float *tPassBack, std::vector<Geom
                 std::cout << "Iteration type: " << rayType << std::endl;
                 std::cout << "Ray: {" << p0.x << " " << p0.y << " " << p0.z << "} -> {";
                 std::cout << d.x << " " << d.y << " " << d.z << "}\n";
+                std::cout << "TransformedRay: {" << transformedRay.get_pt().x << " " << transformedRay.get_pt().y << " " << transformedRay.get_pt().z << "} -> {";
+                std::cout << transformedRay.get_direction().x << " " << transformedRay.get_direction().y << " " << transformedRay.get_direction().z << "}\n";
                 std::cout << "Hit Object: (ID #" << hitNdx + 1 << " - " << objList[hitNdx]->get_type() << ")\n";
                 std::cout << "Intersection: {" << intersectionPt.x << " " << intersectionPt.y << " " << intersectionPt.z << "} at T = " << t << std::endl;
                 std::cout << "Normal: {" << objNormal.x << " " << objNormal.y << " " << objNormal.z << "}\n";
+                std::cout << "Contributions: " << localContribut << " Local, " << reflectContribut << " Reflection, " << refractContribut << " Transmission\n";
             }
             
             if (altBRDF) {
-                local = cook_torrance(lightList, objList[hitNdx], ray, t, objList, printMode);
+                local = cook_torrance(lightList, objList[hitNdx], transformedRay, t, objList, printMode);
             }
             else {
-                local = blinn_phong(lightList, objList[hitNdx], ray, t, objList, printMode);
+                local = blinn_phong(lightList, objList[hitNdx], transformedRay, t, objList, printMode);
             }
 
             reflectColor = glm::vec3(0, 0, 0);

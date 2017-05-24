@@ -299,29 +299,37 @@ int check_hit(std::vector<float> values) {
     return minNdx;
 }
 
-int first_hit(Ray ray, std::vector<GeomObj*> objList, float* newT) {
+Intersection first_hit(Ray ray, std::vector<GeomObj*> objList, float* newT) {
     float t;
     int hitNdx;
     std::vector<float> tValues;
+    std::vector<Ray> transformedRayList;
     Ray transformedRay;
     glm::mat4 invMat;
     glm::vec4 transformPt, transformDir;
+    Intersection intersectObj;
 
     for (int i = 0; i < objList.size(); i++) {
         invMat = objList[i]->get_inverseMatrix();
         transformPt = invMat * glm::vec4(ray.get_pt(), 1.0);
         transformDir = invMat * glm::vec4(ray.get_direction(), 0.0);
-        transformedRay = Ray(glm::vec3(transformPt.x, transformPt.y, transformPt.z), glm::vec3(transformDir.x, transformDir.y, transformDir.z));
+        transformedRay = Ray(glm::vec3(transformPt.x, transformPt.y, transformPt.z), glm::vec3(transformDir.x, transformDir.y, transformDir.z)); 
         t = objList[i]->intersect(transformedRay);
+        //t = objList[i]->intersect(ray);
         tValues.push_back(t);
+        transformedRayList.push_back(transformedRay);
     }
 
     hitNdx = check_hit(tValues);
+    intersectObj = Intersection();
     if (hitNdx != -1) {
         *newT = tValues[hitNdx];
+        transformedRay = transformedRayList[hitNdx];
+        intersectObj = Intersection(ray, transformedRay, tValues[hitNdx], hitNdx);
+        //std::cout << "transformedRay: " << transformedRay.get_pt().x <<  " " << transformedRay.get_pt().y << " " << transformedRay.get_pt().z << std::endl; 
     }
 
-    return hitNdx;
+    return intersectObj;
 }
 
 glm::mat4 create_inv_mat(std::vector<glm::vec4> transformList) {

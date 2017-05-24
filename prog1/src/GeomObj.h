@@ -8,6 +8,7 @@
 #include <iostream>
 #include <cfloat>
 #include "Ray.h"
+#include "Intersection.h"
 
 enum tranformType {scale_t, translate_t, rotate_t};
 
@@ -126,7 +127,7 @@ private:
 
 float determinant(std::vector<float> vect);
 int check_hit(std::vector<float> values);
-int first_hit(Ray ray, std::vector<GeomObj*> objList, float* newT);
+Intersection first_hit(Ray ray, std::vector<GeomObj*> objList, float* newT);
 glm::mat4 create_inv_mat(std::vector<glm::vec4> transformList);
 
 #endif

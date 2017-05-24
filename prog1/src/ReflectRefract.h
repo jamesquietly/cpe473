@@ -9,6 +9,7 @@
 #include "Light.h"
 #include "Ray.h"
 #include "Shading.h"
+#include "Intersection.h"
 
 float schlick_approx(float ior, glm::vec3 normal, glm::vec3 view);
 glm::vec3 beers_law(glm::vec4 objColor, float distance);

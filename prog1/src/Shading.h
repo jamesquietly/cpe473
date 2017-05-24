@@ -6,6 +6,7 @@
 #include "Light.h"
 #include "GeomObj.h"
 #include "Ray.h"
+#include "Intersection.h"
 
 glm::vec3 blinn_phong(std::vector<Light*> lightList, GeomObj* obj, Ray ray, float t, std::vector<GeomObj*> objList, bool printMode);
 

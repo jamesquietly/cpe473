@@ -19,6 +19,7 @@
 #include "Ray.h"
 #include "Shading.h"
 #include "ReflectRefract.h"
+#include "Intersection.h"
 #include "stb_image_write.h"
 
 
@@ -66,8 +67,10 @@ int main(int argc, char **argv) {
     float t;
     bool parsedFile, useAltBRDF = false, useFresnel = false;
     string altArg;
+    Intersection intersectObj;
 
     cout << std::setprecision(4);
+    cout << std::setiosflags(std::ios::fixed);
 
     if (argc < 3) {
         print_help();
@@ -126,7 +129,8 @@ int main(int argc, char **argv) {
                                 ray = create_cam_ray(cam, width, height, Us, Vs);
 
                                 // -1 means no hits
-                                minNdx = first_hit(*ray, objList, &t);
+                                intersectObj = first_hit(*ray, objList, &t);
+                                minNdx = intersectObj.get_hitNdx();
                                 if (minNdx != -1) {
                                     color += raytrace(ray->get_pt(), ray->get_direction(), &t, objList, lights, 6, false, "Primary", useAltBRDF, useFresnel);
                                 }
@@ -175,7 +179,8 @@ int main(int argc, char **argv) {
                 cout << endl;
                 
                 // -1 means no hits
-                minNdx = first_hit(*ray, objList, &t);
+                intersectObj = first_hit(*ray, objList, &t);
+                minNdx = intersectObj.get_hitNdx();
                 if (minNdx != -1) {
                     cout << "T = " << t << endl;
                     cout << "Object Type: " << objList[minNdx]->get_type() << endl;
@@ -204,7 +209,8 @@ int main(int argc, char **argv) {
                 cout << endl;
 
                 // -1 means no hits
-                minNdx = first_hit(*ray, objList, &t);
+                intersectObj = first_hit(*ray, objList, &t);
+                minNdx = intersectObj.get_hitNdx();
                 if (minNdx != -1) {
                     cout << "T = " << t << endl;
                     cout << "Object Type: " << objList[minNdx]->get_type() << endl;
@@ -255,7 +261,12 @@ int main(int argc, char **argv) {
                 }
 
                 ray = create_cam_ray(cam, width, height, inX, inY);
-                raytrace(ray->get_pt(), ray->get_direction(), &t, objList, lights, 6, true, "Primary", useAltBRDF, useFresnel);
+                color = raytrace(ray->get_pt(), ray->get_direction(), &t, objList, lights, 6, true, "Primary", useAltBRDF, useFresnel);
+
+                cout << "Pixel: [" << inX << ", " << inY << "] Color: (";
+                cout << std::round(glm::min(1.0f, color.x) * 255) << ", ";
+                cout << std::round(glm::min(1.0f, color.y) * 255) << ", "; 
+                cout << std::round(glm::min(1.0f, color.z) * 255) << ")\n";
             }
         }
         else {

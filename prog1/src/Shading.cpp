@@ -11,21 +11,28 @@ glm::vec3 blinn_phong(std::vector<Light*> lightList, GeomObj* obj, Ray ray, floa
     int minNdx;
     Ray lightRay;
     std::vector<float> tValues;
+    Intersection lightIntersect;
 
     Ka = (float)obj->get_ambient();
     Kd = (float)obj->get_diffuse();
     Ks = (float)obj->get_specular();
     epsilon = 0.001f;
 
+
     objColorVec4 = obj->get_rgb();
     objColor = glm::vec3(objColorVec4.x, objColorVec4.y, objColorVec4.z);
     rayDir = ray.get_direction();
     point = ray.get_pt() + (t * rayDir);
 
+
     normal = obj->get_normal(point);
     normalMatrix = glm::transpose(obj->get_inverseMatrix());
     normalTransposed = normalMatrix * glm::vec4(normal.x, normal.y, normal.z, 0.0);
     normal = glm::vec3(normalTransposed.x, normalTransposed.y, normalTransposed.z);
+    normal = glm::normalize(normal);
+    // normal * 0.5 + vec3(0.5)
+    //return normal * 0.5f + glm::vec3(0.5f);
+
 
     V = glm::normalize(-1.0f * rayDir);
     ambColor = (float)Ka * objColor;
@@ -35,6 +42,8 @@ glm::vec3 blinn_phong(std::vector<Light*> lightList, GeomObj* obj, Ray ray, floa
 
     for (int i = 0; i < lightList.size(); i++) {
         lightDir = lightList[i]->get_loc() - point;
+        //glm::vec4 lightDir4 = invMat * glm::vec4(lightDir.x, lightDir.y, lightDir.z, 0.0f);
+        //lightDir = glm::vec3(lightDir4.x, lightDir4.y, lightDir4.z);
         lightDir = glm::normalize(lightDir);
         epsPoint = point + epsilon * lightDir;
         lightRay = Ray(epsPoint, lightDir);
@@ -42,7 +51,8 @@ glm::vec3 blinn_phong(std::vector<Light*> lightList, GeomObj* obj, Ray ray, floa
         H = glm::normalize(V + lightDir);
 
         //check to see if light ray hits any object
-        minNdx = first_hit(lightRay, objList, &tLight);
+        lightIntersect = first_hit(lightRay, objList, &tLight);
+        minNdx = lightIntersect.get_hitNdx();
         
         // -1 means no hits along light ray, shadow check
         if (minNdx == -1) {
@@ -77,6 +87,7 @@ glm::vec3 blinn_phong(std::vector<Light*> lightList, GeomObj* obj, Ray ray, floa
     
     result = ambColor + sumDiff + sumSpec;
     if (printMode) {
+        std::cout << "Final Color: {" << result.x << ", " << result.y << ", " << result.z << "}\n";
         std::cout << "Ambient: {" << ambColor.x << ", " << ambColor.y << ", " << ambColor.z << "}\n";
         std::cout << "Diffuse: {" << sumDiff.x << ", " << sumDiff.y << ", " << sumDiff.z << "}\n";
         std::cout << "Specular: {" << sumSpec.x << ", " << sumSpec.y << ", " << sumSpec.z << "}\n\n";
@@ -121,6 +132,7 @@ glm::vec3 cook_torrance(std::vector<Light*> lightList, GeomObj* obj, Ray ray, fl
     Ray lightRay;
     std::vector<float> tValues;
     int hitNdx;
+    Intersection lightIntersect;
 
     s = (float)obj->get_metallic();
     d = 1.0f - s;
@@ -146,7 +158,8 @@ glm::vec3 cook_torrance(std::vector<Light*> lightList, GeomObj* obj, Ray ray, fl
         lightRay = Ray(epsPoint, lightDir);
 
         //check for light ray intersection with objs
-        hitNdx = first_hit(lightRay, objList, &tLight);
+        lightIntersect = first_hit(lightRay, objList, &tLight);
+        hitNdx = lightIntersect.get_hitNdx();
         
         // -1 means no hit, no shadows
         if(hitNdx == -1) {
