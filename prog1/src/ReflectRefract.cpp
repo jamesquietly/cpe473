@@ -48,13 +48,8 @@ glm::vec3 raytrace(glm::vec3 p0, glm::vec3 d, float *tPassBack, std::vector<Geom
             //intersection
             *tPassBack = t;
             //obj space
-            intersectionPt = p0 + t * d;
+            //intersectionPt = p0 + t * d;
 
-            objNormal = objList[hitNdx]->get_normal(intersectionPt);
-
-            normalMatrix = glm::transpose(objList[hitNdx]->get_inverseMatrix());
-            normalTransposed = normalMatrix * glm::vec4(objNormal.x, objNormal.y, objNormal.z, 0.0);
-            objNormal = glm::vec3(normalTransposed.x, normalTransposed.y, normalTransposed.z);
 
             //world space
             invMat = objList[hitNdx]->get_inverseMatrix();
@@ -63,6 +58,12 @@ glm::vec3 raytrace(glm::vec3 p0, glm::vec3 d, float *tPassBack, std::vector<Geom
             transformedRay = Ray(glm::vec3(transformPt.x, transformPt.y, transformPt.z), glm::vec3(transformDir.x, transformDir.y, transformDir.z));
 
             intersectionPt = transformedRay.get_pt() + t * transformedRay.get_direction(); 
+
+            objNormal = objList[hitNdx]->get_normal(intersectionPt);
+
+            normalMatrix = glm::transpose(objList[hitNdx]->get_inverseMatrix());
+            normalTransposed = normalMatrix * glm::vec4(objNormal.x, objNormal.y, objNormal.z, 0.0f);
+            objNormal = glm::vec3(normalTransposed.x, normalTransposed.y, normalTransposed.z);
             
             //reflection
             reflectionVec = ray.calc_reflection(objNormal);
@@ -123,7 +124,7 @@ glm::vec3 raytrace(glm::vec3 p0, glm::vec3 d, float *tPassBack, std::vector<Geom
                 local = cook_torrance(lightList, objList[hitNdx], transformedRay, t, objList, printMode);
             }
             else {
-                local = blinn_phong(lightList, objList[hitNdx], transformedRay, t, objList, printMode);
+                local = blinn_phong(lightList, objList[hitNdx], ray, t, objNormal, objList, printMode);
             }
 
             reflectColor = glm::vec3(0, 0, 0);

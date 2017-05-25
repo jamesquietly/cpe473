@@ -213,6 +213,12 @@ int main(int argc, char **argv) {
                 intersectObj = first_hit(*ray, objList, &t);
                 minNdx = intersectObj.get_hitNdx();
                 if (minNdx != -1) {
+                    Ray transformedRay = intersectObj.get_transformedRay();
+                    glm::vec3 intersectionPt = transformedRay.get_pt() + t * transformedRay.get_direction(); 
+                    glm::vec3 objNormal = objList[minNdx]->get_normal(intersectionPt);
+                    glm::mat4 normalMatrix = glm::transpose(objList[minNdx]->get_inverseMatrix());
+                    glm::vec4 normalTransposed = normalMatrix * glm::vec4(objNormal.x, objNormal.y, objNormal.z, 0.0f);
+                    objNormal = glm::vec3(normalTransposed.x, normalTransposed.y, normalTransposed.z);
                     cout << "T = " << t << endl;
                     cout << "Object Type: " << objList[minNdx]->get_type() << endl;
                     if (altArg.compare("-altbrdf") == 0) {
@@ -221,7 +227,7 @@ int main(int argc, char **argv) {
                     }
                     else {
                         cout << "BRDF: Blinn-Phong" << endl;
-                        color = blinn_phong(lights, objList[minNdx], *ray, t, objList, false);
+                        color = blinn_phong(lights, objList[minNdx], *ray, t, objNormal, objList, false);
                     }
 
                     cout << "Color: (";

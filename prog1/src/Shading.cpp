@@ -1,6 +1,6 @@
 #include "Shading.h"
 
-glm::vec3 blinn_phong(std::vector<Light*> lightList, GeomObj* obj, Ray ray, float t, std::vector<GeomObj*> objList, bool printMode) {
+glm::vec3 blinn_phong(std::vector<Light*> lightList, GeomObj* obj, Ray ray, float t, glm::vec3 objNormal, std::vector<GeomObj*> objList, bool printMode) {
     glm::vec3 result, lightColor, ambColor, specColor, diffColor; 
     glm::vec3 lightDir, rayDir, V, H, point, sumDiff, sumSpec, normal, objColor;
     glm::vec3 epsPoint;
@@ -25,13 +25,7 @@ glm::vec3 blinn_phong(std::vector<Light*> lightList, GeomObj* obj, Ray ray, floa
     point = ray.get_pt() + (t * rayDir);
 
 
-    normal = obj->get_normal(point);
-    normalMatrix = glm::transpose(obj->get_inverseMatrix());
-    normalTransposed = normalMatrix * glm::vec4(normal.x, normal.y, normal.z, 0.0);
-    normal = glm::vec3(normalTransposed.x, normalTransposed.y, normalTransposed.z);
-    normal = glm::normalize(normal);
-    // normal * 0.5 + vec3(0.5)
-    //return normal * 0.5f + glm::vec3(0.5f);
+    normal = glm::normalize(objNormal);
 
 
     V = glm::normalize(-1.0f * rayDir);
@@ -42,8 +36,6 @@ glm::vec3 blinn_phong(std::vector<Light*> lightList, GeomObj* obj, Ray ray, floa
 
     for (int i = 0; i < lightList.size(); i++) {
         lightDir = lightList[i]->get_loc() - point;
-        //glm::vec4 lightDir4 = invMat * glm::vec4(lightDir.x, lightDir.y, lightDir.z, 0.0f);
-        //lightDir = glm::vec3(lightDir4.x, lightDir4.y, lightDir4.z);
         lightDir = glm::normalize(lightDir);
         epsPoint = point + epsilon * lightDir;
         lightRay = Ray(epsPoint, lightDir);
@@ -75,6 +67,9 @@ glm::vec3 blinn_phong(std::vector<Light*> lightList, GeomObj* obj, Ray ray, floa
                 }
                 sumDiff += diffColor;
                 sumSpec += specColor;
+            }
+            else {
+                //sumDiff.y += 0.6f;
             } 
 
         } 

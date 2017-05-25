@@ -1,7 +1,7 @@
 Author: James Ly
 
-Transformations is not being shaded correctly yet. 
-I think it's because I am not calculating the normals correctly.
+Transformations is now working. I need to use object space ray for
+shadows instead of world space ray (transformed by inverse matrix).
 Everything like schlick's and anit aliasing seems to be working.
 I also made a pov and rendered image: p4.pov and p4.png in resources folder
 
