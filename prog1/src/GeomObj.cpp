@@ -13,6 +13,7 @@ GeomObj::GeomObj() {
     refraction = 0;
     type = "GeomObj";
     inverseMatrix = glm::mat4(1.0);
+    normalMatrix = glm::transpose(inverseMatrix);
 }
 
 GeomObj::GeomObj(std::string t) {
@@ -28,6 +29,7 @@ GeomObj::GeomObj(std::string t) {
     refraction = 0;
     type = t;
     inverseMatrix = glm::mat4(1.0);
+    normalMatrix = glm::transpose(inverseMatrix);
 }
 
 GeomObj::GeomObj(glm::vec4 c, std::vector<glm::vec4> transf, double amb, double diff, double spec, double rough, double metal, double ndx, double reflect, double refrac, std::string typeStr, glm::mat4 invMat) {
@@ -43,6 +45,7 @@ GeomObj::GeomObj(glm::vec4 c, std::vector<glm::vec4> transf, double amb, double 
     refraction = refrac;
     type = typeStr;
     inverseMatrix = glm::mat4(invMat);
+    normalMatrix = glm::transpose(inverseMatrix);
 }
 
 void GeomObj::print_transform() {
@@ -262,6 +265,138 @@ glm::vec3 Triangle::get_normal(glm::vec3 pt) {
     return normal;
 }
 
+
+Box::Box() : GeomObj("Box") {
+    min = glm::vec3(0, 0, 0);
+    max = glm::vec3(0, 0, 0);
+}
+
+Box::Box(glm::vec3 mins, glm::vec3 maxes, glm::vec4 c, double amb, double diff, double spec, double rough, double metal, double ndx, double reflect, double refrac, std::vector<glm::vec4> transf, glm::mat4 invMat) : GeomObj(c, transf, amb, diff, spec, rough, metal, ndx, reflect, refrac, "Box", invMat) {
+    min = glm::vec3(mins);
+    max = glm::vec3(maxes);
+}
+
+void Box::print() {
+    std::cout << "- Type: " << type << std::endl;
+    std::cout << "- Min: {" << min.x << ", " << min.y << ", " << min.z << "}\n";
+    std::cout << "- Max: {" << max.x << ", " << max.y << ", " << max.z << "}\n";
+    GeomObj::print_color();
+    GeomObj::print_material();
+    GeomObj::print_transform();
+}
+
+float Box::intersect(Ray r) {
+    glm::vec3 rayPt, rayDir;
+    rayPt = r.get_pt();
+    rayDir = r.get_direction();
+    float returnVal = -1;
+
+    if (rayDir.x == 0) {
+        if (rayPt.x >= min.x || rayPt.x <= max.x) {
+            return -1;
+        }
+    }
+    if (rayDir.y == 0) {
+        if (rayPt.y >= min.y || rayPt.y <= max.y) {
+            return -1;
+        }
+    }
+    if (rayDir.z == 0) {
+        if (rayPt.z >= min.z || rayPt.z <= max.z) {
+            return -1;
+        }
+    }
+    else {
+        float tgmin = -std::numeric_limits<float>::infinity();
+        float tgmax = std::numeric_limits<float>::infinity();
+
+        //for x
+        float t1 = (min.x - rayPt.x)/rayDir.x;
+        float t2 = (max.x - rayPt.x)/rayDir.x;
+
+        //want the closest t1 from the ray's perspective
+        if (t1 > t2) {
+            std::swap(t1, t2);
+        }
+
+        if (t1 > tgmin) {
+            tgmin = t1;
+        }
+        if (t2 < tgmax) {
+            tgmax = t2;
+        }
+
+        //for y
+        t1 = (min.y - rayPt.y)/rayDir.y;
+        t2 = (max.y - rayPt.y)/rayDir.y;
+        
+        //want the closest t1 from the ray's perspective
+        if (t1 > t2) {
+            std::swap(t1, t2);
+        }
+
+        if (t1 > tgmin) {
+            tgmin = t1;
+        }
+        if (t2 < tgmax) {
+            tgmax = t2;
+        }
+
+        //for z
+        t1 = (min.z - rayPt.z)/rayDir.z;
+        t2 = (max.z - rayPt.z)/rayDir.z;
+        
+        //want the closest t1 from the ray's perspective
+        if (t1 > t2) {
+            std::swap(t1, t2);
+        }
+
+        if (t1 > tgmin) {
+            tgmin = t1;
+        }
+        if (t2 < tgmax) {
+            tgmax = t2;
+        }
+
+
+        if (tgmin > tgmax) {
+            return -1;
+        }
+        //box is behind
+        if (tgmax < 0) {
+            return -1;
+        }
+
+        //if we got here, there's an intersection
+        returnVal = tgmin;
+    }
+    return returnVal;
+}
+
+glm::vec3 Box::get_normal(glm::vec3 pt) {
+    glm::vec3 normal = glm::vec3(1, 0, 0);
+    if (pt.x == min.x) {
+        normal = glm::vec3(-1, 0, 0);
+    }
+    else if (pt.x == max.x) {
+        normal = glm::vec3(1, 0, 0);
+    }
+    else if (pt.y == min.y) {
+        normal = glm::vec3(0, -1, 0);
+    }
+    else if (pt.y == max.y) {
+        normal = glm::vec3(0, 1, 0);
+    }
+    else if (pt.z == min.z) {
+        normal = glm::vec3(0, 0, -1);
+    }
+    else if (pt.z == max.z) {
+        normal = glm::vec3(0, 0, 1);
+    }
+    return normal;
+}
+
+
 float determinant(std::vector<float> vect) {
     float a, b, c, d, e, f, g, h, i;
 
@@ -313,7 +448,7 @@ Intersection first_hit(Ray ray, std::vector<GeomObj*> objList, float* newT) {
         invMat = objList[i]->get_inverseMatrix();
         transformPt = invMat * glm::vec4(ray.get_pt(), 1.0);
         transformDir = invMat * glm::vec4(ray.get_direction(), 0.0);
-        transformedRay = Ray(glm::vec3(transformPt.x, transformPt.y, transformPt.z), glm::vec3(transformDir.x, transformDir.y, transformDir.z)); 
+        transformedRay = Ray(glm::vec3(transformPt.x, transformPt.y, transformPt.z), glm::normalize(glm::vec3(transformDir.x, transformDir.y, transformDir.z)) ); 
         t = objList[i]->intersect(transformedRay);
         //t = objList[i]->intersect(ray);
         tValues.push_back(t);

@@ -7,6 +7,8 @@
 #include <string>
 #include <iostream>
 #include <cfloat>
+#include <limits>
+#include <algorithm>
 #include "Ray.h"
 #include "Intersection.h"
 
@@ -30,6 +32,7 @@ public:
     double get_refraction() const {return refraction;}
     std::string get_type() const {return type;}
     glm::mat4 get_inverseMatrix() const {return inverseMatrix;}
+    glm::mat4 get_normalMatrix() const {return normalMatrix;}
 
     void set_rgb(glm::vec4 v) {rgb = glm::vec4(v.x, v.y, v.z, v.w);}
     void set_transform(std::vector<glm::vec4> t) {transform = t;}
@@ -42,6 +45,7 @@ public:
     void set_reflection(double r) {reflection = r;}
     void set_refraction(double r) {refraction = r;}
     void set_inverseMatrix(glm::mat4 iMat) {inverseMatrix = glm::mat4(iMat);}
+    void set_normalMatrix(glm::mat4 nMat) {normalMatrix = glm::mat4(nMat);}
 
     void print_transform();
     void print_color();
@@ -56,7 +60,7 @@ protected:
     std::vector<glm::vec4> transform;
     double ambient, diffuse, specular, roughness, metallic, ior, reflection, refraction;
     std::string type;
-    glm::mat4 inverseMatrix;
+    glm::mat4 inverseMatrix, normalMatrix;
 
 private:
 
@@ -124,6 +128,27 @@ public:
 private:
     glm::vec3 pt1, pt2, pt3;
 };
+
+
+class Box : public GeomObj {
+public:
+    Box();
+    Box(glm::vec3 mins, glm::vec3 maxes, glm::vec4 c, double amb, double diff, double spec, double rough, double metal, double ndx, double reflect, double refrac, std::vector<glm::vec4> transf, glm::mat4 invMat);
+    glm::vec3 get_min() const {return min;}
+    glm::vec3 get_max() const {return max;}
+
+
+    void set_min(glm::vec3 mi) {min = glm::vec3(mi);}
+    void set_max(glm::vec3 ma) {max = glm::vec3(ma);}
+
+    void print();
+    float intersect(Ray r);
+    glm::vec3 get_normal(glm::vec3 pt);
+
+private:
+    glm::vec3 min, max;
+};
+
 
 float determinant(std::vector<float> vect);
 int check_hit(std::vector<float> values);

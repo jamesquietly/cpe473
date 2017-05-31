@@ -26,6 +26,7 @@ glm::vec3 blinn_phong(std::vector<Light*> lightList, GeomObj* obj, Ray ray, floa
 
 
     normal = glm::normalize(objNormal);
+    //return normal * 0.5f + glm::vec3(0.5);
 
 
     V = glm::normalize(-1.0f * rayDir);

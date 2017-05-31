@@ -20,6 +20,7 @@
 #include "Shading.h"
 #include "ReflectRefract.h"
 #include "Intersection.h"
+#include "BVHNode.h"
 #include "stb_image_write.h"
 
 
@@ -36,7 +37,7 @@ void print_help() {
     cout << "       raytrace printrays <input_filename> <width> <height> <x> <y> [-altbrdf]\n";
 }
 
-void check_alt_args(int argc, char **argv, bool *fresnel, bool *altBRDF, int *superSample){
+void check_alt_args(int argc, char **argv, bool *fresnel, bool *altBRDF, int *superSample, bool *sds){
     int foundNdx;
     for (int i = 0; i < argc; i++) {
         string arg(argv[i]);
@@ -50,6 +51,9 @@ void check_alt_args(int argc, char **argv, bool *fresnel, bool *altBRDF, int *su
         if (arg.compare("-altbrdf") == 0) {
             *altBRDF = true;
         }
+        if (arg.compare("-sds") == 0) {
+            *sds = true;
+        }
     }
 }
 
@@ -59,14 +63,14 @@ int main(int argc, char **argv) {
     int width, height, inX, inY, minNdx, numChannels, ssArg = 1;
     char *filename;
     vector<Light*> lights;
-    vector<GeomObj*> objList;
+    vector<GeomObj*> objList, leftList, rightList;
     vector<float> tValues;
     glm::vec3 color, objColor;
     glm::vec4 colorVec4;
     Camera cam;
     Ray* ray;
     float t;
-    bool parsedFile, useAltBRDF = false, useFresnel = false;
+    bool parsedFile, useAltBRDF = false, useFresnel = false, useSDS = false;
     string altArg;
     Intersection intersectObj;
 
@@ -114,11 +118,26 @@ int main(int argc, char **argv) {
                 float Us, Vs;
 
                 if (argc > 5) {
-                    check_alt_args(argc, argv, &useFresnel, &useAltBRDF, &ssArg);
+                    check_alt_args(argc, argv, &useFresnel, &useAltBRDF, &ssArg, &useSDS);
                 }
+
+                if (useSDS) {
+                    BVHNode* tree = new BVHNode();
+                    cout << "orignal list size: " << objList.size() << endl;
+                    leftList = left_half(objList);
+                    cout << "lefthalf list size: " << leftList.size() << endl;
+                    rightList = right_half(objList);
+                    cout << "righthalf list size: " << rightList.size() << endl;
+
+                    tree->recursive_tree_build(objList, 0);
+                    cout << "tree list size: " << tree->left->objList.size() << endl;
+
+                }
+
 
                 unsigned char *data = new unsigned char[width * height * numChannels];
                 unsigned char red, green, blue;
+
 
                 for (int y = 0; y < height; y++) {
                     for (int x = 0; x < width; x++) {
@@ -264,7 +283,7 @@ int main(int argc, char **argv) {
                 inY = atoi(argv[6]);
 
                 if (argc > 7) {
-                    check_alt_args(argc, argv, &useFresnel, &useAltBRDF, &ssArg);
+                    check_alt_args(argc, argv, &useFresnel, &useAltBRDF, &ssArg, &useSDS);
                 }
 
                 ray = create_cam_ray(cam, width, height, inX, inY);

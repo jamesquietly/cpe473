@@ -61,7 +61,7 @@ glm::vec3 raytrace(glm::vec3 p0, glm::vec3 d, float *tPassBack, std::vector<Geom
 
             objNormal = objList[hitNdx]->get_normal(intersectionPt);
 
-            normalMatrix = glm::transpose(objList[hitNdx]->get_inverseMatrix());
+            normalMatrix = objList[hitNdx]->get_normalMatrix();
             normalTransposed = normalMatrix * glm::vec4(objNormal.x, objNormal.y, objNormal.z, 0.0f);
             objNormal = glm::vec3(normalTransposed.x, normalTransposed.y, normalTransposed.z);
             
