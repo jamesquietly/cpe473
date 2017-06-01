@@ -9,6 +9,7 @@
 #include <cfloat>
 #include <limits>
 #include <algorithm>
+#include <cstdlib>
 #include "Ray.h"
 #include "Intersection.h"
 
@@ -154,5 +155,6 @@ float determinant(std::vector<float> vect);
 int check_hit(std::vector<float> values);
 Intersection first_hit(Ray ray, std::vector<GeomObj*> objList, float* newT);
 glm::mat4 create_inv_mat(std::vector<glm::vec4> transformList);
+bool epsilonEquals(float a, float b, float epsilon);
 
 #endif

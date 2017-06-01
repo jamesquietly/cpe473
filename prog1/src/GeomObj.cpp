@@ -374,23 +374,25 @@ float Box::intersect(Ray r) {
 }
 
 glm::vec3 Box::get_normal(glm::vec3 pt) {
-    glm::vec3 normal = glm::vec3(1, 0, 0);
-    if (pt.x == min.x) {
+    glm::vec3 normal = glm::vec3(0, 0, 0);
+    float epsilon = 0.001f;
+
+    if (epsilonEquals(pt.x, min.x, epsilon)) {
         normal = glm::vec3(-1, 0, 0);
     }
-    else if (pt.x == max.x) {
+    else if (epsilonEquals(pt.x, max.x, epsilon)) {
         normal = glm::vec3(1, 0, 0);
     }
-    else if (pt.y == min.y) {
+    else if (epsilonEquals(pt.y, min.y, epsilon)) {
         normal = glm::vec3(0, -1, 0);
     }
-    else if (pt.y == max.y) {
+    else if (epsilonEquals(pt.y, max.y, epsilon)) {
         normal = glm::vec3(0, 1, 0);
     }
-    else if (pt.z == min.z) {
+    else if (epsilonEquals(pt.z, min.z, epsilon)) {
         normal = glm::vec3(0, 0, -1);
     }
-    else if (pt.z == max.z) {
+    else if (epsilonEquals(pt.z, max.z, epsilon)) {
         normal = glm::vec3(0, 0, 1);
     }
     return normal;
@@ -504,4 +506,8 @@ glm::mat4 create_inv_mat(std::vector<glm::vec4> transformList) {
     }
 
     return glm::inverse(transformMat);
+}
+
+bool epsilonEquals(float a, float b, float epsilon) {
+    return std::abs(a - b) < epsilon;
 }
