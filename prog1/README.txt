@@ -1,9 +1,8 @@
 Author: James Ly
 
-Transformations is now working. I need to use object space ray for
-shadows instead of world space ray (transformed by inverse matrix).
-Everything like schlick's and anit aliasing seems to be working.
-I also made a pov and rendered image: p4.pov and p4.png in resources folder
+It looks like the box intersections are working. I am still working on
+the BVH tree. I can construct the BVH tree. I am still working on traversing
+and finding intersections using the tree. You can bvh tree code in BVHNode.cpp
 
 
 Usage: raytrace render <input_filename> <width> <height>
