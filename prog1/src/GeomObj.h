@@ -55,6 +55,8 @@ public:
     virtual void print() {printf("Type:%s\n", type.c_str());}
     virtual float intersect(Ray r) { return 0;}
     virtual glm::vec3 get_normal(glm::vec3 pt){return glm::vec3(0,0,0);}
+    virtual glm::vec3 get_min() {return glm::vec3(0, 0, 0);}
+    virtual glm::vec3 get_max() {return glm::vec3(0, 0, 0);}
 
 protected:
     glm::vec4 rgb;
@@ -82,6 +84,8 @@ public:
     void print();
     float intersect(Ray r);
     glm::vec3 get_normal(glm::vec3 pt) {return glm::normalize(pt - center);}
+    glm::vec3 get_min() {return glm::vec3(center.x - rad, center.y - rad, center.z - rad);}
+    glm::vec3 get_max() {return glm::vec3(center.x + rad, center.y + rad, center.z + rad);}
 
 private:
     glm::vec3 center;
@@ -102,6 +106,8 @@ public:
     void print();
     float intersect(Ray r);
     glm::vec3 get_normal(glm::vec3 pt) {return normal;}
+    glm::vec3 get_min();
+    glm::vec3 get_max();
 
 
 private:
@@ -124,6 +130,8 @@ public:
     void print();
     float intersect(Ray r);
     glm::vec3 get_normal(glm::vec3 pt);
+    glm::vec3 get_min();
+    glm::vec3 get_max();
 
 
 private:
@@ -135,8 +143,8 @@ class Box : public GeomObj {
 public:
     Box();
     Box(glm::vec3 mins, glm::vec3 maxes, glm::vec4 c, double amb, double diff, double spec, double rough, double metal, double ndx, double reflect, double refrac, std::vector<glm::vec4> transf, glm::mat4 invMat);
-    glm::vec3 get_min() const {return min;}
-    glm::vec3 get_max() const {return max;}
+    glm::vec3 get_min() {return min;}
+    glm::vec3 get_max() {return max;}
 
 
     void set_min(glm::vec3 mi) {min = glm::vec3(mi);}

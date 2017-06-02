@@ -185,6 +185,43 @@ float Plane::intersect(Ray r) {
 
 }
 
+glm::vec3 Plane::get_min() {
+    glm::vec3 min, xNorm, yNorm, zNorm;
+    min = glm::vec3(0, 0, 0);
+    xNorm = glm::vec3(1, 0, 0);
+    yNorm = glm::vec3(0, 1, 0);
+    zNorm = glm::vec3(0, 0, 1);
+    if (glm::dot(normal, xNorm) == 0 && glm::dot(normal, yNorm) == 0) {
+        min = glm::vec3(-10000, -10000, 0);
+    }
+    else if (glm::dot(normal, xNorm) == 0 && glm::dot(normal, zNorm) == 0) {
+        min = glm::vec3(-10000, 0, -10000);
+    }
+    else if (glm::dot(normal, zNorm) == 0 && glm::dot(normal, yNorm) == 0) {
+        min = glm::vec3(0, -10000, -10000);
+    }
+    return min;
+
+}
+
+glm::vec3 Plane::get_max() {
+    glm::vec3 max, xNorm, yNorm, zNorm;
+    max = glm::vec3(0, 0, 0);
+    xNorm = glm::vec3(1, 0, 0);
+    yNorm = glm::vec3(0, 1, 0);
+    zNorm = glm::vec3(0, 0, 1);
+    if (glm::dot(normal, xNorm) == 0 && glm::dot(normal, yNorm) == 0) {
+        max = glm::vec3(10000, 10000, 0);
+    }
+    else if (glm::dot(normal, xNorm) == 0 && glm::dot(normal, zNorm) == 0) {
+        max = glm::vec3(10000, 0, 10000);
+    }
+    else if (glm::dot(normal, zNorm) == 0 && glm::dot(normal, yNorm) == 0) {
+        max = glm::vec3(0, 10000, 10000);
+    }
+    return max;
+}
+
 Triangle::Triangle() : GeomObj("Triangle") {
     pt1 = glm::vec3(0, 0, 0);
     pt2 = glm::vec3(0, 0, 0);
@@ -263,6 +300,22 @@ glm::vec3 Triangle::get_normal(glm::vec3 pt) {
     normal = glm::normalize(glm::cross(AB, AC));
 
     return normal;
+}
+
+glm::vec3 Triangle::get_min() {
+    glm::vec3 min = glm::vec3(0, 0, 0);
+    min.x = std::min(pt1.x, std::min(pt2.x, pt3.x));
+    min.y = std::min(pt1.y, std::min(pt2.y, pt3.y));
+    min.z = std::min(pt1.z, std::min(pt2.z, pt3.z));
+    return min;
+}
+
+glm::vec3 Triangle::get_max() {
+    glm::vec3 max = glm::vec3(0, 0, 0);
+    max.x = std::max(pt1.x, std::max(pt2.x, pt3.x));
+    max.y = std::max(pt1.y, std::max(pt2.y, pt3.y));
+    max.z = std::max(pt1.z, std::max(pt2.z, pt3.z));
+    return max;
 }
 
 
@@ -368,7 +421,12 @@ float Box::intersect(Ray r) {
         }
 
         //if we got here, there's an intersection
-        returnVal = tgmin;
+        if (tgmin > 0) {
+            returnVal = tgmin;
+        }
+        else {
+            returnVal = tgmax; //could be inside, so tgmax is the intersection we will hit
+        }
     }
     return returnVal;
 }

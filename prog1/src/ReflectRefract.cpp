@@ -64,6 +64,9 @@ glm::vec3 raytrace(glm::vec3 p0, glm::vec3 d, float *tPassBack, std::vector<Geom
             normalMatrix = objList[hitNdx]->get_normalMatrix();
             normalTransposed = normalMatrix * glm::vec4(objNormal.x, objNormal.y, objNormal.z, 0.0f);
             objNormal = glm::vec3(normalTransposed.x, normalTransposed.y, normalTransposed.z);
+
+            //back to obj space?
+            intersectionPt = p0 + t * d;
             
             //reflection
             reflectionVec = ray.calc_reflection(objNormal);

@@ -63,7 +63,7 @@ int main(int argc, char **argv) {
     int width, height, inX, inY, minNdx, numChannels, ssArg = 1;
     char *filename;
     vector<Light*> lights;
-    vector<GeomObj*> objList, leftList, rightList;
+    vector<GeomObj*> objList, leftList, rightList, treeHits;
     vector<float> tValues;
     glm::vec3 color, objColor;
     glm::vec4 colorVec4;
@@ -130,7 +130,6 @@ int main(int argc, char **argv) {
                     cout << "righthalf list size: " << rightList.size() << endl;
 
                     tree->recursive_tree_build(objList, 0);
-                    cout << "tree list size: " << tree->left->objList.size() << endl;
 
                 }
 
