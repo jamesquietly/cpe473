@@ -124,7 +124,7 @@ int main(int argc, char **argv) {
 
                 if (argc > 5) {
                     check_alt_args(argc, argv, &useFresnel, &useAltBRDF, &ssArg, &useSDS, &useGI);
-                    optionalArgs = OptionalArgs(false, useAltBRDF, useFresnel, useGI, 128, 3);
+                    optionalArgs = OptionalArgs(false, useAltBRDF, useFresnel, useGI, 128, 2);
                 }
 
                 if (useSDS) {
