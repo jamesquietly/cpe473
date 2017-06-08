@@ -68,9 +68,6 @@ glm::vec3 blinn_phong(std::vector<Light*> lightList, GeomObj* obj, Ray ray, floa
                 }
                 sumDiff += diffColor;
                 sumSpec += specColor;
-            }
-            else {
-                //sumDiff.y += 0.6f;
             } 
 
         } 
@@ -82,6 +79,94 @@ glm::vec3 blinn_phong(std::vector<Light*> lightList, GeomObj* obj, Ray ray, floa
     }
     
     result = ambColor + sumDiff + sumSpec;
+    if (printMode) {
+        std::cout << "Final Color: {" << result.x << ", " << result.y << ", " << result.z << "}\n";
+        std::cout << "Ambient: {" << ambColor.x << ", " << ambColor.y << ", " << ambColor.z << "}\n";
+        std::cout << "Diffuse: {" << sumDiff.x << ", " << sumDiff.y << ", " << sumDiff.z << "}\n";
+        std::cout << "Specular: {" << sumSpec.x << ", " << sumSpec.y << ", " << sumSpec.z << "}\n\n";
+    }
+    return result;
+}
+
+glm::vec3 blinn_phong_diffspec(std::vector<Light*> lightList, GeomObj* obj, Ray ray, float t, glm::vec3 objNormal, std::vector<GeomObj*> objList, bool printMode) {
+    glm::vec3 result, lightColor, ambColor, specColor, diffColor; 
+    glm::vec3 lightDir, rayDir, V, H, point, sumDiff, sumSpec, normal, objColor;
+    glm::vec3 epsPoint;
+    glm::vec4 objColorVec4;
+    glm::vec4 normalTransposed;
+    glm::mat4 normalMatrix;
+    float shininess, Ka, Kd, Ks, tLight, epsilon, distToLight, distToIntersect;
+    int minNdx;
+    Ray lightRay;
+    std::vector<float> tValues;
+    Intersection lightIntersect;
+
+    Ka = (float)obj->get_ambient();
+    Kd = (float)obj->get_diffuse();
+    Ks = (float)obj->get_specular();
+    epsilon = 0.001f;
+
+
+    objColorVec4 = obj->get_rgb();
+    objColor = glm::vec3(objColorVec4.x, objColorVec4.y, objColorVec4.z);
+    rayDir = ray.get_direction();
+    point = ray.get_pt() + (t * rayDir);
+
+
+    normal = glm::normalize(objNormal);
+    //return normal * 0.5f + glm::vec3(0.5);
+
+
+    V = glm::normalize(-1.0f * rayDir);
+    ambColor = (float)Ka * objColor;
+    shininess = (2.0f / glm::pow((float)obj->get_roughness(), 2) - 2.0f);
+    sumDiff = glm::vec3(0, 0, 0);
+    sumSpec = glm::vec3(0, 0, 0);
+
+    for (int i = 0; i < lightList.size(); i++) {
+        lightDir = lightList[i]->get_loc() - point;
+        lightDir = glm::normalize(lightDir);
+        epsPoint = point + epsilon * lightDir;
+        lightRay = Ray(epsPoint, lightDir);
+        lightColor = lightList[i]->get_rgb();
+        H = glm::normalize(V + lightDir);
+
+        //check to see if light ray hits any object
+        lightIntersect = first_hit(lightRay, objList, &tLight);
+        minNdx = lightIntersect.get_hitNdx();
+        
+        // -1 means no hits along light ray, shadow check
+        if (minNdx == -1) {
+            diffColor = Kd * objColor  * lightColor * glm::max(0.0f, glm::dot(normal, lightDir));
+            specColor = Ks * objColor  * lightColor * glm::max(0.0f, glm::pow(glm::dot(H, normal), shininess));
+            sumDiff += diffColor;
+            sumSpec += specColor;
+        }
+        else if (minNdx >= 0) {
+            distToLight = glm::distance(lightList[i]->get_loc(), epsPoint);
+            distToIntersect = glm::distance(epsPoint + (tLight * lightDir), epsPoint);
+
+            //check if light ray intersection is behind the light source
+            if (distToIntersect > distToLight) {
+                diffColor = Kd * objColor  * lightColor * glm::max(0.0f, glm::dot(normal, lightDir));
+                specColor = Ks * objColor  * lightColor * glm::max(0.0f, glm::pow(glm::dot(H, normal), shininess));
+                if (std::isnan(specColor.x) || std::isnan(specColor.y) || std::isnan(specColor.z)) {
+                    specColor = glm::vec3(0, 0, 0);
+                    //std::cout << "specColor is nan" << std::endl;
+                }
+                sumDiff += diffColor;
+                sumSpec += specColor;
+            } 
+
+        } 
+
+    }
+    if (std::isnan(sumSpec.x)) {
+        sumSpec = glm::vec3(0, 0, 0);
+        //std::cout << "sumSpec is nan" << std::endl;
+    }
+    
+    result = sumDiff + sumSpec;
     if (printMode) {
         std::cout << "Final Color: {" << result.x << ", " << result.y << ", " << result.z << "}\n";
         std::cout << "Ambient: {" << ambColor.x << ", " << ambColor.y << ", " << ambColor.z << "}\n";

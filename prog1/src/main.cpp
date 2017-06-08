@@ -37,7 +37,7 @@ void print_help() {
     cout << "       raytrace printrays <input_filename> <width> <height> <x> <y> [-altbrdf]\n";
 }
 
-void check_alt_args(int argc, char **argv, bool *fresnel, bool *altBRDF, int *superSample, bool *sds){
+void check_alt_args(int argc, char **argv, bool *fresnel, bool *altBRDF, int *superSample, bool *sds, bool *gi){
     int foundNdx;
     for (int i = 0; i < argc; i++) {
         string arg(argv[i]);
@@ -53,6 +53,9 @@ void check_alt_args(int argc, char **argv, bool *fresnel, bool *altBRDF, int *su
         }
         if (arg.compare("-sds") == 0) {
             *sds = true;
+        }
+        if (arg.compare("-gi") == 0) {
+            *gi = true;
         }
     }
 }
@@ -70,12 +73,14 @@ int main(int argc, char **argv) {
     Camera cam;
     Ray* ray;
     float t;
-    bool parsedFile, useAltBRDF = false, useFresnel = false, useSDS = false;
+    bool parsedFile, useAltBRDF = false, useFresnel = false, useSDS = false, useGI = false;
     string altArg;
     Intersection intersectObj;
+    OptionalArgs optionalArgs = OptionalArgs();
 
     cout << std::setprecision(4);
     cout << std::setiosflags(std::ios::fixed);
+    srand(time(NULL));
 
     if (argc < 3) {
         print_help();
@@ -118,7 +123,8 @@ int main(int argc, char **argv) {
                 float Us, Vs;
 
                 if (argc > 5) {
-                    check_alt_args(argc, argv, &useFresnel, &useAltBRDF, &ssArg, &useSDS);
+                    check_alt_args(argc, argv, &useFresnel, &useAltBRDF, &ssArg, &useSDS, &useGI);
+                    optionalArgs = OptionalArgs(false, useAltBRDF, useFresnel, useGI, 128, 3);
                 }
 
                 if (useSDS) {
@@ -132,7 +138,7 @@ int main(int argc, char **argv) {
                     tree->recursive_tree_build(objList, 0);
 
                 }
-
+                
 
                 unsigned char *data = new unsigned char[width * height * numChannels];
                 unsigned char red, green, blue;
@@ -151,7 +157,7 @@ int main(int argc, char **argv) {
                                 intersectObj = first_hit(*ray, objList, &t);
                                 minNdx = intersectObj.get_hitNdx();
                                 if (minNdx != -1) {
-                                    color += raytrace(ray->get_pt(), ray->get_direction(), &t, objList, lights, 6, false, "Primary", useAltBRDF, useFresnel);
+                                    color += raytrace(ray->get_pt(), ray->get_direction(), &t, objList, lights, 6, "Primary", optionalArgs);
                                 }
                                 
                             }
@@ -263,16 +269,16 @@ int main(int argc, char **argv) {
                 height = atoi(argv[4]);
                 inX = atoi(argv[5]);
                 inY = atoi(argv[6]);
-
+                
+                optionalArgs.set_printMode(true);
                 if (argc > 7) {
                     altArg = string(argv[7]);
-                    if (altArg.compare("-altbrdf") == 0) {
-                        useAltBRDF = true;
-                    }
+                    check_alt_args(argc, argv, &useFresnel, &useAltBRDF, &ssArg, &useSDS, &useGI);
+                    optionalArgs = OptionalArgs(true, useAltBRDF, useFresnel, useGI, 0, 0);
                 }
 
                 ray = create_cam_ray(cam, width, height, inX, inY);
-                raytrace(ray->get_pt(), ray->get_direction(), &t, objList, lights, 6, true, "Primary", useAltBRDF, false);
+                raytrace(ray->get_pt(), ray->get_direction(), &t, objList, lights, 6, "Primary", optionalArgs);
 
             }
             else if (mode.compare("printrays") == 0) {
@@ -281,12 +287,14 @@ int main(int argc, char **argv) {
                 inX = atoi(argv[5]);
                 inY = atoi(argv[6]);
 
+                optionalArgs.set_printMode(true);
                 if (argc > 7) {
-                    check_alt_args(argc, argv, &useFresnel, &useAltBRDF, &ssArg, &useSDS);
+                    check_alt_args(argc, argv, &useFresnel, &useAltBRDF, &ssArg, &useSDS, &useGI);
+                    optionalArgs = OptionalArgs(true, useAltBRDF, useFresnel, useGI, 0, 0);
                 }
 
                 ray = create_cam_ray(cam, width, height, inX, inY);
-                color = raytrace(ray->get_pt(), ray->get_direction(), &t, objList, lights, 6, true, "Primary", useAltBRDF, useFresnel);
+                color = raytrace(ray->get_pt(), ray->get_direction(), &t, objList, lights, 6, "Primary", optionalArgs);
 
                 cout << "Pixel: [" << inX << ", " << inY << "] Color: (";
                 cout << std::round(glm::min(1.0f, color.x) * 255) << ", ";
