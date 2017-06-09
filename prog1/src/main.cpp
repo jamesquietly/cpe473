@@ -28,7 +28,7 @@ using namespace std;
 
 /* print help message */
 void print_help() {
-    cout << "Usage: raytrace render <input_filename> <width> <height> [-altbrdf]\n";
+    cout << "Usage: raytrace render <input_filename> <width> <height> [-fresnel] [-ss=N] [-gi]\n";
     cout << "       raytrace sceneinfo <input_filename>\n";
     cout << "       raytrace pixelray <input_filename> <width> <height> <x> <y>\n";
     cout << "       raytrace firsthit <input_filename> <width> <height> <x> <y>\n";

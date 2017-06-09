@@ -175,12 +175,6 @@ glm::vec3 raytrace(glm::vec3 p0, glm::vec3 d, float *tPassBack, std::vector<Geom
                 std::cout << "Contributions: " << localContribut << " Local, " << reflectContribut << " Reflection, " << refractContribut << " Transmission\n";
             }
             
-            if (optArg.get_altBRDF()) {
-                local = cook_torrance(lightList, objList[hitNdx], ray, t, objList, optArg.get_printMode());
-            }
-            else {
-                local = blinn_phong(lightList, objList[hitNdx], ray, t, objNormal, objList, optArg.get_printMode());
-            }
 
             reflectColor = glm::vec3(0, 0, 0);
             refractionColor = glm::vec3(0, 0, 0);
@@ -218,6 +212,12 @@ glm::vec3 raytrace(glm::vec3 p0, glm::vec3 d, float *tPassBack, std::vector<Geom
                 color += localContribut * (giAmb + local) + reflectContribut * reflectColor + refractContribut * refractionColor;
             }
             else {
+                if (optArg.get_altBRDF()) {
+                    local = cook_torrance(lightList, objList[hitNdx], ray, t, objList, optArg.get_printMode());
+                }
+                else {
+                    local = blinn_phong(lightList, objList[hitNdx], ray, t, objNormal, objList, optArg.get_printMode());
+                }
 
                 if (enterMedia && refractT != -1.0f) {
                     distance = glm::distance(intersectionPt, refractPt + refractT * refractionVec);
