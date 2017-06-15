@@ -1,5 +1,8 @@
 Author: James Ly
 
+WEB HTML in ../web/
+images of soft shadows in ../web/images
+
 1. What feature you chose and why
 For the final project, I decided to do soft shadows because it sounded do-able and it would make the shadows look nicer instead of just pure darkness ambient color.
 
