@@ -77,19 +77,14 @@ glm::vec3 blinn_phong(std::vector<Light*> lightList, GeomObj* obj, Ray ray, floa
         minNdx = lightIntersect.get_hitNdx();
         
         // -1 means no hits along light ray, shadow check
-        if (shadow_check(minNdx, lightList[i]->get_loc(), epsPoint, lightDir, tLight)) {
+        if (shadow_check(minNdx, lightLoc, epsPoint, lightDir, tLight)) {
             diffColor = Kd * objColor  * lightColor * glm::max(0.0f, glm::dot(normal, lightDir));
             specColor = Ks * objColor  * lightColor * glm::max(0.0f, glm::pow(glm::dot(H, normal), shininess));
-            if (std::isnan(specColor.x) || std::isnan(specColor.y) || std::isnan(specColor.z)) {
-                    specColor = glm::vec3(0, 0, 0);
-            }
+
             sumDiff += diffColor;
             sumSpec += specColor;
         }
 
-    }
-    if (std::isnan(sumSpec.x)) {
-        sumSpec = glm::vec3(0, 0, 0);
     }
     
     result = ambColor + sumDiff + sumSpec;
@@ -153,15 +148,9 @@ glm::vec3 blinn_phong_diffspec(std::vector<Light*> lightList, GeomObj* obj, Ray 
         if (shadow_check(minNdx, lightLoc, epsPoint, lightDir, tLight)) {
             diffColor = Kd * objColor  * lightColor * glm::max(0.0f, glm::dot(normal, lightDir));
             specColor = Ks * objColor  * lightColor * glm::max(0.0f, glm::pow(glm::dot(H, normal), shininess));
-            if (std::isnan(specColor.x) || std::isnan(specColor.y) || std::isnan(specColor.z)) {
-                    specColor = glm::vec3(0, 0, 0);
-            }
             sumDiff += diffColor;
             sumSpec += specColor;
         }
-    }
-    if (std::isnan(sumSpec.x)) {
-        sumSpec = glm::vec3(0, 0, 0);
     }
     
     result = sumDiff + sumSpec;
@@ -226,18 +215,13 @@ glm::vec3 blinn_phong_soft_shadow(std::vector<Light*> lightList, GeomObj* obj, R
                 if (shadow_check(minNdx, lightLoc, epsPoint, lightDir, tLight)) {
                     diffColor = Kd * objColor  * lightColor * glm::max(0.0f, glm::dot(normal, lightDir));
                     specColor = Ks * objColor  * lightColor * glm::max(0.0f, glm::pow(glm::dot(H, normal), shininess));
-                    if (std::isnan(specColor.x) || std::isnan(specColor.y) || std::isnan(specColor.z)) {
-                            specColor = glm::vec3(0, 0, 0);
-                    }
+
                     sumDiff += diffColor;
                     sumSpec += specColor;
                 }
             }
         }
 
-    }
-    if (std::isnan(sumSpec.x)) {
-        sumSpec = glm::vec3(0, 0, 0);
     }
 
     float numSoftShadowSq = numSoftShadow * numSoftShadow;
