@@ -1,13 +1,42 @@
 #include "Shading.h"
 
+glm::vec3 nan_check(glm::vec3 v) {
+    if (std::isnan(v.x) || std::isnan(v.y) || std::isnan(v.z)) {
+        return glm::vec3(0, 0, 0);
+    }
+    else {
+        return v;
+    }
+}
+
+bool shadow_check(int hitNdx, glm::vec3 lightLoc, glm::vec3 epsPoint, glm::vec3 lightDir, float tLight) {
+    bool result = false;
+    // -1 means no hits along light ray, shadow check
+    if (hitNdx == -1) {
+        result = true;
+    }
+    // hit something
+    else if (hitNdx >= 0) {
+        float distToLight = glm::distance(lightLoc, epsPoint);
+        float distToIntersect = glm::distance(epsPoint + (tLight * lightDir), epsPoint);
+
+        //check if light ray intersection is behind the light source
+        if (distToIntersect > distToLight) {
+            result = true;
+        }
+    }
+
+    return result;
+}
+
 glm::vec3 blinn_phong(std::vector<Light*> lightList, GeomObj* obj, Ray ray, float t, glm::vec3 objNormal, std::vector<GeomObj*> objList, bool printMode) {
-    glm::vec3 result, lightColor, ambColor, specColor, diffColor; 
+    glm::vec3 result, lightColor, ambColor, specColor, diffColor, lightLoc; 
     glm::vec3 lightDir, rayDir, V, H, point, sumDiff, sumSpec, normal, objColor;
     glm::vec3 epsPoint;
     glm::vec4 objColorVec4;
     glm::vec4 normalTransposed;
     glm::mat4 normalMatrix;
-    float shininess, Ka, Kd, Ks, tLight, epsilon, distToLight, distToIntersect;
+    float shininess, Ka, Kd, Ks, tLight, epsilon;
     int minNdx;
     Ray lightRay;
     std::vector<float> tValues;
@@ -36,8 +65,8 @@ glm::vec3 blinn_phong(std::vector<Light*> lightList, GeomObj* obj, Ray ray, floa
     sumSpec = glm::vec3(0, 0, 0);
 
     for (int i = 0; i < lightList.size(); i++) {
-        lightDir = lightList[i]->get_loc() - point;
-        lightDir = glm::normalize(lightDir);
+        lightLoc = lightList[i]->get_loc();
+        lightDir = glm::normalize(lightLoc - point);
         epsPoint = point + epsilon * lightDir;
         lightRay = Ray(epsPoint, lightDir);
         lightColor = lightList[i]->get_rgb();
@@ -48,34 +77,19 @@ glm::vec3 blinn_phong(std::vector<Light*> lightList, GeomObj* obj, Ray ray, floa
         minNdx = lightIntersect.get_hitNdx();
         
         // -1 means no hits along light ray, shadow check
-        if (minNdx == -1) {
+        if (shadow_check(minNdx, lightList[i]->get_loc(), epsPoint, lightDir, tLight)) {
             diffColor = Kd * objColor  * lightColor * glm::max(0.0f, glm::dot(normal, lightDir));
             specColor = Ks * objColor  * lightColor * glm::max(0.0f, glm::pow(glm::dot(H, normal), shininess));
+            if (std::isnan(specColor.x) || std::isnan(specColor.y) || std::isnan(specColor.z)) {
+                    specColor = glm::vec3(0, 0, 0);
+            }
             sumDiff += diffColor;
             sumSpec += specColor;
         }
-        else if (minNdx >= 0) {
-            distToLight = glm::distance(lightList[i]->get_loc(), epsPoint);
-            distToIntersect = glm::distance(epsPoint + (tLight * lightDir), epsPoint);
-
-            //check if light ray intersection is behind the light source
-            if (distToIntersect > distToLight) {
-                diffColor = Kd * objColor  * lightColor * glm::max(0.0f, glm::dot(normal, lightDir));
-                specColor = Ks * objColor  * lightColor * glm::max(0.0f, glm::pow(glm::dot(H, normal), shininess));
-                if (std::isnan(specColor.x) || std::isnan(specColor.y) || std::isnan(specColor.z)) {
-                    specColor = glm::vec3(0, 0, 0);
-                    //std::cout << "specColor is nan" << std::endl;
-                }
-                sumDiff += diffColor;
-                sumSpec += specColor;
-            } 
-
-        } 
 
     }
     if (std::isnan(sumSpec.x)) {
         sumSpec = glm::vec3(0, 0, 0);
-        //std::cout << "sumSpec is nan" << std::endl;
     }
     
     result = ambColor + sumDiff + sumSpec;
@@ -89,13 +103,13 @@ glm::vec3 blinn_phong(std::vector<Light*> lightList, GeomObj* obj, Ray ray, floa
 }
 
 glm::vec3 blinn_phong_diffspec(std::vector<Light*> lightList, GeomObj* obj, Ray ray, float t, glm::vec3 objNormal, std::vector<GeomObj*> objList, bool printMode) {
-    glm::vec3 result, lightColor, ambColor, specColor, diffColor; 
+    glm::vec3 result, lightColor, ambColor, specColor, diffColor, lightLoc; 
     glm::vec3 lightDir, rayDir, V, H, point, sumDiff, sumSpec, normal, objColor;
     glm::vec3 epsPoint;
     glm::vec4 objColorVec4;
     glm::vec4 normalTransposed;
     glm::mat4 normalMatrix;
-    float shininess, Ka, Kd, Ks, tLight, epsilon, distToLight, distToIntersect;
+    float shininess, Ka, Kd, Ks, tLight, epsilon;
     int minNdx;
     Ray lightRay;
     std::vector<float> tValues;
@@ -124,8 +138,8 @@ glm::vec3 blinn_phong_diffspec(std::vector<Light*> lightList, GeomObj* obj, Ray 
     sumSpec = glm::vec3(0, 0, 0);
 
     for (int i = 0; i < lightList.size(); i++) {
-        lightDir = lightList[i]->get_loc() - point;
-        lightDir = glm::normalize(lightDir);
+        lightLoc = lightList[i]->get_loc();
+        lightDir = glm::normalize(lightLoc - point);
         epsPoint = point + epsilon * lightDir;
         lightRay = Ray(epsPoint, lightDir);
         lightColor = lightList[i]->get_rgb();
@@ -136,37 +150,98 @@ glm::vec3 blinn_phong_diffspec(std::vector<Light*> lightList, GeomObj* obj, Ray 
         minNdx = lightIntersect.get_hitNdx();
         
         // -1 means no hits along light ray, shadow check
-        if (minNdx == -1) {
+        if (shadow_check(minNdx, lightLoc, epsPoint, lightDir, tLight)) {
             diffColor = Kd * objColor  * lightColor * glm::max(0.0f, glm::dot(normal, lightDir));
             specColor = Ks * objColor  * lightColor * glm::max(0.0f, glm::pow(glm::dot(H, normal), shininess));
+            if (std::isnan(specColor.x) || std::isnan(specColor.y) || std::isnan(specColor.z)) {
+                    specColor = glm::vec3(0, 0, 0);
+            }
             sumDiff += diffColor;
             sumSpec += specColor;
         }
-        else if (minNdx >= 0) {
-            distToLight = glm::distance(lightList[i]->get_loc(), epsPoint);
-            distToIntersect = glm::distance(epsPoint + (tLight * lightDir), epsPoint);
+    }
+    if (std::isnan(sumSpec.x)) {
+        sumSpec = glm::vec3(0, 0, 0);
+    }
+    
+    result = sumDiff + sumSpec;
+    if (printMode) {
+        std::cout << "Final Color: {" << result.x << ", " << result.y << ", " << result.z << "}\n";
+        std::cout << "Ambient: {" << ambColor.x << ", " << ambColor.y << ", " << ambColor.z << "}\n";
+        std::cout << "Diffuse: {" << sumDiff.x << ", " << sumDiff.y << ", " << sumDiff.z << "}\n";
+        std::cout << "Specular: {" << sumSpec.x << ", " << sumSpec.y << ", " << sumSpec.z << "}\n\n";
+    }
+    return result;
+}
 
-            //check if light ray intersection is behind the light source
-            if (distToIntersect > distToLight) {
-                diffColor = Kd * objColor  * lightColor * glm::max(0.0f, glm::dot(normal, lightDir));
-                specColor = Ks * objColor  * lightColor * glm::max(0.0f, glm::pow(glm::dot(H, normal), shininess));
-                if (std::isnan(specColor.x) || std::isnan(specColor.y) || std::isnan(specColor.z)) {
-                    specColor = glm::vec3(0, 0, 0);
-                    //std::cout << "specColor is nan" << std::endl;
+glm::vec3 blinn_phong_soft_shadow(std::vector<Light*> lightList, GeomObj* obj, Ray ray, float t, glm::vec3 objNormal, std::vector<GeomObj*> objList, bool printMode) {
+    glm::vec3 result, lightColor, ambColor, specColor, diffColor; 
+    glm::vec3 lightDir, rayDir, V, H, point, sumDiff, sumSpec, normal, objColor, lightLoc;
+    glm::vec3 epsPoint;
+    glm::vec4 objColorVec4;
+    glm::vec4 normalTransposed;
+    glm::mat4 normalMatrix;
+    float shininess, Ka, Kd, Ks, tLight, epsilon;
+    int minNdx;
+    Ray lightRay;
+    std::vector<float> tValues;
+    Intersection lightIntersect;
+
+    Ka = (float)obj->get_ambient();
+    Kd = (float)obj->get_diffuse();
+    Ks = (float)obj->get_specular();
+    epsilon = 0.001f;
+
+
+    objColorVec4 = obj->get_rgb();
+    objColor = glm::vec3(objColorVec4.x, objColorVec4.y, objColorVec4.z);
+    rayDir = ray.get_direction();
+    point = ray.get_pt() + (t * rayDir);
+
+
+    normal = glm::normalize(objNormal);
+    //return normal * 0.5f + glm::vec3(0.5);
+
+
+    V = glm::normalize(-1.0f * rayDir);
+    ambColor = (float)Ka * objColor;
+    shininess = (2.0f / glm::pow((float)obj->get_roughness(), 2) - 2.0f);
+    sumDiff = glm::vec3(0, 0, 0);
+    sumSpec = glm::vec3(0, 0, 0);
+    int numSoftShadow = 10;
+    for (int i = 0; i < lightList.size(); i++) {
+        lightLoc = lightList[i]->get_loc();
+        for (int j = lightLoc.y - (numSoftShadow/2); j < lightLoc.y + (numSoftShadow/2); j++) {
+            for (int k = lightLoc.z - (numSoftShadow/2); k < lightLoc.z + (numSoftShadow/2); k++) {
+                lightDir = glm::normalize(glm::vec3(lightLoc.x, j, k) - point);
+                epsPoint = point + epsilon * lightDir;
+                lightRay = Ray(epsPoint, lightDir);
+                lightColor = lightList[i]->get_rgb();
+                H = glm::normalize(V + lightDir);
+
+                //check to see if light ray hits any object
+                lightIntersect = first_hit(lightRay, objList, &tLight);
+                minNdx = lightIntersect.get_hitNdx();
+                
+                if (shadow_check(minNdx, lightLoc, epsPoint, lightDir, tLight)) {
+                    diffColor = Kd * objColor  * lightColor * glm::max(0.0f, glm::dot(normal, lightDir));
+                    specColor = Ks * objColor  * lightColor * glm::max(0.0f, glm::pow(glm::dot(H, normal), shininess));
+                    if (std::isnan(specColor.x) || std::isnan(specColor.y) || std::isnan(specColor.z)) {
+                            specColor = glm::vec3(0, 0, 0);
+                    }
+                    sumDiff += diffColor;
+                    sumSpec += specColor;
                 }
-                sumDiff += diffColor;
-                sumSpec += specColor;
-            } 
-
-        } 
+            }
+        }
 
     }
     if (std::isnan(sumSpec.x)) {
         sumSpec = glm::vec3(0, 0, 0);
-        //std::cout << "sumSpec is nan" << std::endl;
     }
-    
-    result = sumDiff + sumSpec;
+
+    float numSoftShadowSq = numSoftShadow * numSoftShadow;
+    result = ambColor + sumDiff/numSoftShadowSq + sumSpec/numSoftShadowSq;
     if (printMode) {
         std::cout << "Final Color: {" << result.x << ", " << result.y << ", " << result.z << "}\n";
         std::cout << "Ambient: {" << ambColor.x << ", " << ambColor.y << ", " << ambColor.z << "}\n";
@@ -207,9 +282,9 @@ glm::vec3 ck_diff_spec(float d, float s, float Rd, float roughness, float ior, g
 
 glm::vec3 cook_torrance(std::vector<Light*> lightList, GeomObj* obj, Ray ray, float t, std::vector<GeomObj*> objList, bool printMode) {
     glm::vec3 result, objColor, ambColor, diffColor, specColor, rayDir, point;
-    glm::vec3 normal, lightColor, V, H, lightDir, sumDiffSpec, epsPoint;
+    glm::vec3 normal, lightColor, V, H, lightDir, sumDiffSpec, epsPoint, lightLoc;
     glm::vec4 objColorVec4;
-    float s, d, roughness, ior, Rd, epsilon, tLight, distToLight, distToIntersect;
+    float s, d, roughness, ior, Rd, epsilon, tLight;
     Ray lightRay;
     std::vector<float> tValues;
     int hitNdx;
@@ -231,9 +306,9 @@ glm::vec3 cook_torrance(std::vector<Light*> lightList, GeomObj* obj, Ray ray, fl
     sumDiffSpec = glm::vec3(0, 0, 0);
 
     for (int i = 0; i < lightList.size(); i++) {
+        lightLoc = lightList[i]->get_loc();
         lightColor = lightList[i]->get_rgb();
-        lightDir = lightList[i]->get_loc() - point;
-        lightDir = glm::normalize(lightDir);
+        lightDir = glm::normalize(lightLoc - point);
         H = glm::normalize(V + lightDir);
         epsPoint = point + epsilon * lightDir;
         lightRay = Ray(epsPoint, lightDir);
@@ -243,19 +318,9 @@ glm::vec3 cook_torrance(std::vector<Light*> lightList, GeomObj* obj, Ray ray, fl
         hitNdx = lightIntersect.get_hitNdx();
         
         // -1 means no hit, no shadows
-        if(hitNdx == -1) {
+        if(shadow_check(hitNdx, lightLoc, epsPoint, lightDir, tLight)) {
             sumDiffSpec += ck_diff_spec(d, s, Rd, roughness, ior, normal, H, V, lightDir, lightColor, objColor);
-        }
-        else if (hitNdx) {
-            distToLight = glm::distance(lightList[i]->get_loc(), epsPoint);
-            distToIntersect = glm::distance(epsPoint + (tLight * lightDir), epsPoint);
-
-            //check to see if obj is behing light source
-            if (distToIntersect > distToLight) {
-                sumDiffSpec += ck_diff_spec(d, s, Rd, roughness, ior, normal, H, V, lightDir, lightColor, objColor);
-            }
-        }
-        
+        }   
     }
 
     if (printMode) {

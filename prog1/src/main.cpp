@@ -37,7 +37,7 @@ void print_help() {
     cout << "       raytrace printrays <input_filename> <width> <height> <x> <y> [-altbrdf]\n";
 }
 
-void check_alt_args(int argc, char **argv, bool *fresnel, bool *altBRDF, int *superSample, bool *sds, bool *gi){
+void check_alt_args(int argc, char **argv, bool *fresnel, bool *altBRDF, int *superSample, bool *sds, bool *gi, bool *soft){
     int foundNdx;
     for (int i = 0; i < argc; i++) {
         string arg(argv[i]);
@@ -57,6 +57,10 @@ void check_alt_args(int argc, char **argv, bool *fresnel, bool *altBRDF, int *su
         if (arg.compare("-gi") == 0) {
             *gi = true;
         }
+        if (arg.compare("-softshadow") == 0) {
+            *soft = true;
+        }
+
     }
 }
 
@@ -73,7 +77,7 @@ int main(int argc, char **argv) {
     Camera cam;
     Ray* ray;
     float t;
-    bool parsedFile, useAltBRDF = false, useFresnel = false, useSDS = false, useGI = false;
+    bool parsedFile, useAltBRDF = false, useFresnel = false, useSDS = false, useGI = false, useSoftShadow = false;
     string altArg;
     Intersection intersectObj;
     OptionalArgs optionalArgs = OptionalArgs();
@@ -123,8 +127,8 @@ int main(int argc, char **argv) {
                 float Us, Vs;
 
                 if (argc > 5) {
-                    check_alt_args(argc, argv, &useFresnel, &useAltBRDF, &ssArg, &useSDS, &useGI);
-                    optionalArgs = OptionalArgs(false, useAltBRDF, useFresnel, useGI, 128, 2);
+                    check_alt_args(argc, argv, &useFresnel, &useAltBRDF, &ssArg, &useSDS, &useGI, &useSoftShadow);
+                    optionalArgs = OptionalArgs(false, useAltBRDF, useFresnel, useGI, useSoftShadow, 128, 2);
                 }
 
                 if (useSDS) {
@@ -273,8 +277,8 @@ int main(int argc, char **argv) {
                 optionalArgs.set_printMode(true);
                 if (argc > 7) {
                     altArg = string(argv[7]);
-                    check_alt_args(argc, argv, &useFresnel, &useAltBRDF, &ssArg, &useSDS, &useGI);
-                    optionalArgs = OptionalArgs(true, useAltBRDF, useFresnel, useGI, 0, 0);
+                    check_alt_args(argc, argv, &useFresnel, &useAltBRDF, &ssArg, &useSDS, &useGI, &useSoftShadow);
+                    optionalArgs = OptionalArgs(true, useAltBRDF, useFresnel, useGI, useSoftShadow, 0, 0);
                 }
 
                 ray = create_cam_ray(cam, width, height, inX, inY);
@@ -289,8 +293,8 @@ int main(int argc, char **argv) {
 
                 optionalArgs.set_printMode(true);
                 if (argc > 7) {
-                    check_alt_args(argc, argv, &useFresnel, &useAltBRDF, &ssArg, &useSDS, &useGI);
-                    optionalArgs = OptionalArgs(true, useAltBRDF, useFresnel, useGI, 0, 0);
+                    check_alt_args(argc, argv, &useFresnel, &useAltBRDF, &ssArg, &useSDS, &useGI, &useSoftShadow);
+                    optionalArgs = OptionalArgs(true, useAltBRDF, useFresnel, useGI, useSoftShadow, 0, 0);
                 }
 
                 ray = create_cam_ray(cam, width, height, inX, inY);

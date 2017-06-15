@@ -5,15 +5,17 @@ OptionalArgs::OptionalArgs() {
     altBRDF = false;
     useFresnel = false;
     useGI = false;
+    useSoftShadow = false;
     numGISamples = 0;
     numBounces = 0;
 }
 
-OptionalArgs::OptionalArgs(bool print, bool alt, bool fresnel, bool gi, int numSamples, int nBounces) {
+OptionalArgs::OptionalArgs(bool print, bool alt, bool fresnel, bool gi, bool soft, int numSamples, int nBounces) {
     printMode = print;
     altBRDF = alt;
     useFresnel = fresnel;
     useGI = gi;
+    useSoftShadow = soft;
     numGISamples = numSamples;
     numBounces = nBounces;
 }
@@ -48,6 +50,20 @@ glm::vec3 cosineWeightedPoint() {
     return glm::vec3(x, y, z);
 }
 
+float frand() {
+    return ((float)rand()/RAND_MAX) * 2 - 1;
+}
+
+glm::vec3 uniformSamplePoint(float u, float v) {
+    float r, x, y, z, theta;
+    r = glm::sqrt(u);
+    theta = 2.0f * 3.14f * v;
+    x = r * glm::cos(theta); 
+    y = r * glm::sin(theta);
+    z = glm::sqrt(1 - u);
+    return glm::vec3(x, y, z);
+}
+
 glm::vec3 alignSampleVector(glm::vec3 sample, glm::vec3 up, glm::vec3 normal) {
     float angle = glm::acos(glm::dot(up, normal));
     glm::vec3 axis = glm::cross(up, normal);
@@ -62,6 +78,22 @@ std::vector<glm::vec3> generate_hemisphere_sample_pts(int numSamples, glm::vec3 
     up = glm::vec3(0, 0, 1);
     for (int i = 0; i < numSamples; i++) {
         pt = cosineWeightedPoint();
+        pt = alignSampleVector(pt, up, normal);
+        randomPts.push_back(pt);
+    }
+    return randomPts;
+}
+
+std::vector<glm::vec3> generate_uniform_sample_pts(int numSamples, glm::vec3 normal) {
+    std::vector<glm::vec3> randomPts;
+    glm::vec3 pt, up;
+    up = glm::vec3(0, 0, 1);
+    float u, v, nSqrt;
+    nSqrt = glm::sqrt(numSamples);
+    for (int i = 0; i < numSamples; i++) {
+        u = (i/nSqrt) + frand() * 0.5f * (1/nSqrt);
+        v = std::fmod(i, nSqrt) + frand() * 0.5f * (1/nSqrt); 
+        pt = uniformSamplePoint(u, v);
         pt = alignSampleVector(pt, up, normal);
         randomPts.push_back(pt);
     }
@@ -99,11 +131,11 @@ glm::vec3 raytrace(glm::vec3 p0, glm::vec3 d, float *tPassBack, std::vector<Geom
         if (hitNdx != -1) {
             //intersection
             *tPassBack = t;
-            //obj space
+          
             //intersectionPt = p0 + t * d;
 
 
-            //world space
+            //to obj space
             invMat = objList[hitNdx]->get_inverseMatrix();
             transformPt = invMat * glm::vec4(ray.get_pt(), 1.0);
             transformDir = invMat * glm::vec4(ray.get_direction(), 0.0);
@@ -117,7 +149,7 @@ glm::vec3 raytrace(glm::vec3 p0, glm::vec3 d, float *tPassBack, std::vector<Geom
             normalTransposed = normalMatrix * glm::vec4(objNormal.x, objNormal.y, objNormal.z, 0.0f);
             objNormal = glm::vec3(normalTransposed.x, normalTransposed.y, normalTransposed.z);
 
-            //back to obj space?
+            //back to world space
             intersectionPt = p0 + t * d;
             
             //reflection
@@ -202,6 +234,7 @@ glm::vec3 raytrace(glm::vec3 p0, glm::vec3 d, float *tPassBack, std::vector<Geom
 
                 giAmb = glm::vec3(0, 0, 0);
                 local = blinn_phong_diffspec(lightList, objList[hitNdx], ray, t, objNormal, objList, optArg.get_printMode());
+                //std::cout <<  local.x << ", " << local.y << ", " << local.z << std::endl;
                 samplePts = generate_hemisphere_sample_pts(currGISamples, objNormal);
 
                 for (int i = 0; i < samplePts.size(); i++) {
@@ -212,7 +245,10 @@ glm::vec3 raytrace(glm::vec3 p0, glm::vec3 d, float *tPassBack, std::vector<Geom
                 color += localContribut * (giAmb + local) + reflectContribut * reflectColor + refractContribut * refractionColor;
             }
             else {
-                if (optArg.get_altBRDF()) {
+                if (optArg.get_useSoftShadow()) {
+                    local = blinn_phong_soft_shadow(lightList, objList[hitNdx], ray, t, objNormal, objList, optArg.get_printMode());
+                }
+                else if (optArg.get_altBRDF()) {
                     local = cook_torrance(lightList, objList[hitNdx], ray, t, objList, optArg.get_printMode());
                 }
                 else {
