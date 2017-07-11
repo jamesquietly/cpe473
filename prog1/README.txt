@@ -1,6 +1,11 @@
 Author: James Ly
 
-WEB HTML in ../web/
+View final proj page at:
+https://jamesquietly.github.io/cpe473/web/index.html
+
+OR
+
+in ../web/
 images of soft shadows in ../web/images
 
 1. What feature you chose and why
